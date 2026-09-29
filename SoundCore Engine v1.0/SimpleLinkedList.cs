@@ -1,6 +1,6 @@
 ﻿// SoundCore Engine v2.0 - TecNM Campus Monclova
-// Integrantes: Rosembert Jared Ortiz Reyes - I25050406
-// Fecha: 28/09/2026 | Versión: 1.0
+// Authors: Rosembert Jared Ortiz Reyes - I25050406
+// Date: 28/09/2026 | Version: 1.0
 
 using System.Collections;
 
@@ -9,167 +9,167 @@ namespace SoundCore.EstructurasPropias
     public class Node<T>
     {
         public T Value { get; set; }
-        public Node<T>? Siguiente { get; set; }
+        public Node<T>? Next { get; set; }
 
-        public Node(T valor)
+        public Node(T value)
         {
-            Value = valor;
-            Siguiente = null;
+            Value = value;
+            Next = null;
         }
     }
 
     public class SimpleLinkedList<T> : IEnumerable<T>
     {
-        public Node<T>? Cabeza { get; private set; }
-        public int Conteo { get; private set; }
+        public Node<T>? Head { get; private set; }
+        public int Count { get; private set; }
 
-        public bool EstaVacia => Cabeza == null;
+        public bool IsEmpty => Head == null;
 
-        public void AddToFinal(T valor)
+        public void AddToEnd(T value)
         {
-            var nuevoNodo = new Node<T>(valor);
-            if (EstaVacia)
+            var newNode = new Node<T>(value);
+            if (IsEmpty)
             {
-                Cabeza = nuevoNodo;
+                Head = newNode;
             }
             else
             {
-                var actual = Cabeza!;
-                while (actual.Siguiente != null)
-                    actual = actual.Siguiente;
-                actual.Siguiente = nuevoNodo;
+                var current = Head!;
+                while (current.Next != null)
+                    current = current.Next;
+                current.Next = newNode;
             }
-            Conteo++;
+            Count++;
         }
 
-        public void PlayNext(T valor)
+        public void PlayNext(T value)
         {
-            var nuevoNodo = new Node<T>(valor);
-            if (EstaVacia)
+            var newNode = new Node<T>(value);
+            if (IsEmpty)
             {
-                Cabeza = nuevoNodo;
+                Head = newNode;
             }
             else
             {
-                nuevoNodo.Siguiente = Cabeza!.Siguiente;
-                Cabeza.Siguiente = nuevoNodo;
+                newNode.Next = Head!.Next;
+                Head.Next = newNode;
             }
-            Conteo++;
+            Count++;
         }
 
         public T AdvanceTrack()
         {
-            if (EstaVacia)
-                throw new InvalidOperationException("La cola de reproducción está vacía.");
+            if (IsEmpty)
+                throw new InvalidOperationException("The playback queue is empty.");
 
-            T valor = Cabeza!.Value;
-            Cabeza = Cabeza.Siguiente;
-            Conteo--;
-            return valor;
+            T value = Head!.Value;
+            Head = Head.Next;
+            Count--;
+            return value;
         }
 
-        public void Invest()
+        public void Reverse()
         {
-            Node<T>? previo = null;
-            Node<T>? actual = Cabeza;
-            Node<T>? siguiente = null;
+            Node<T>? previous = null;
+            Node<T>? current = Head;
+            Node<T>? next = null;
 
-            while (actual != null)
+            while (current != null)
             {
-                siguiente = actual.Siguiente; 
-                actual.Siguiente = previo;   
-                previo = actual;            
-                actual = siguiente;          
+                next = current.Next; //Guardar puntero al resto de la lista
+                current.Next = previous; //invertir la referencia
+                previous = current; //Dezplazar previo
+                current = next; //Dezplazar el actual
             }
 
-            Cabeza = previo;
+            Head = previous;
         }
 
-        public void InsertSort(T valor, Comparison<T> comparador)
+        public void InsertSort(T value, Comparison<T> comparator)
         {
-            var nuevo = new Node<T>(valor);
+            var newNode = new Node<T>(value);
 
-            if (EstaVacia || comparador(valor, Cabeza!.Value) < 0)
+            if (IsEmpty || comparator(value, Head!.Value) < 0)
             {
-                nuevo.Siguiente = Cabeza;
-                Cabeza = nuevo;
-                Conteo++;
+                newNode.Next = Head;
+                Head = newNode;
+                Count++;
                 return;
             }
 
-            var actual = Cabeza;
-            while (actual.Siguiente != null && comparador(valor, actual.Siguiente.Value) >= 0)
-                actual = actual.Siguiente;
+            var current = Head;
+            while (current.Next != null && comparator(value, current.Next.Value) >= 0)
+                current = current.Next;
 
-            nuevo.Siguiente = actual.Siguiente;
-            actual.Siguiente = nuevo;
-            Conteo++;
+            newNode.Next = current.Next;
+            current.Next = newNode;
+            Count++;
         }
 
-        public void DebugDuplicates(Func<T, T, bool> sonIguales)
+        public void DebugDuplicates(Func<T, T, bool> areEqual)
         {
-            var actual = Cabeza;
+            var current = Head;
 
-            while (actual != null)
+            while (current != null)
             {
-                var corredor = actual;
-                while (corredor.Siguiente != null)
+                var runner = current;
+                while (runner.Next != null)
                 {
-                    if (sonIguales(actual.Value, corredor.Siguiente.Value))
+                    if (areEqual(current.Value, runner.Next.Value))
                     {
-                        corredor.Siguiente = corredor.Siguiente.Siguiente;
-                        Conteo--;
+                        runner.Next = runner.Next.Next;
+                        Count--;
                     }
                     else
                     {
-                        corredor = corredor.Siguiente;
+                        runner = runner.Next;
                     }
                 }
-                actual = actual.Siguiente;
+                current = current.Next;
             }
         }
 
-        public void Sort(Comparison<T> comparador)
+        public void Sort(Comparison<T> comparator)
         {
-            Node<T>? ordenada = null;
-            var actual = Cabeza;
+            Node<T>? sorted = null;
+            var current = Head;
 
-            while (actual != null)
+            while (current != null)
             {
-                var siguiente = actual.Siguiente;
+                var next = current.Next;
 
-                if (ordenada == null || comparador(actual.Value, ordenada.Value) < 0)
+                if (sorted == null || comparator(current.Value, sorted.Value) < 0)
                 {
-                    actual.Siguiente = ordenada;
-                    ordenada = actual;
+                    current.Next = sorted;
+                    sorted = current;
                 }
                 else
                 {
-                    var p = ordenada;
-                    while (p.Siguiente != null && comparador(actual.Value, p.Siguiente.Value) >= 0)
-                        p = p.Siguiente;
-                    actual.Siguiente = p.Siguiente;
-                    p.Siguiente = actual;
+                    var p = sorted;
+                    while (p.Next != null && comparator(current.Value, p.Next.Value) >= 0)
+                        p = p.Next;
+                    current.Next = p.Next;
+                    p.Next = current;
                 }
-                actual = siguiente;
+                current = next;
             }
 
-            Cabeza = ordenada;
+            Head = sorted;
         }
 
-        public void Clean()
+        public void Clear()
         {
-            Cabeza = null;
-            Conteo = 0;
+            Head = null;
+            Count = 0;
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            var actual = Cabeza;
-            while (actual != null)
+            var current = Head;
+            while (current != null)
             {
-                yield return actual.Value;
-                actual = actual.Siguiente;
+                yield return current.Value;
+                current = current.Next;
             }
         }
 

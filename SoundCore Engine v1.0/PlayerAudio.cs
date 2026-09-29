@@ -1,88 +1,87 @@
 ﻿// SoundCore Engine v2.0 - TecNM Campus Monclova
-// Integrantes: Rosembert Jared Ortiz Reyes - I25050406
-// Fecha: 28/09/2026 | Versión: 1.0
+// Authors: Rosembert Jared Ortiz Reyes - I25050406
+// Date: 28/09/2026 | Version: 1.0
 
 using NAudio.Wave;
 
 namespace SoundCore.EstructurasPropias
 {
-  
     public sealed class PlayerAudio : IDisposable
     {
-        private WaveOutEvent? _salida;
-        private AudioFileReader? _lector;
-        private float _volumen = 0.8f;
+        private WaveOutEvent? _output;
+        private AudioFileReader? _reader;
+        private float _volume = 0.8f;
 
-        public event EventHandler? PistaTerminada;
+        public event EventHandler? TrackEnded;
 
-        public bool TieneAudio => _lector != null;
-        public bool EstaReproduciendo => _salida?.PlaybackState == PlaybackState.Playing;
-        public TimeSpan Duracion => _lector?.TotalTime ?? TimeSpan.Zero;
+        public bool HasAudio => _reader != null;
+        public bool IsPlaying => _output?.PlaybackState == PlaybackState.Playing;
+        public TimeSpan Duration => _reader?.TotalTime ?? TimeSpan.Zero;
 
-        public TimeSpan Posicion
+        public TimeSpan Position
         {
-            get => _lector?.CurrentTime ?? TimeSpan.Zero;
-            set { if (_lector != null) _lector.CurrentTime = value; }
+            get => _reader?.CurrentTime ?? TimeSpan.Zero;
+            set { if (_reader != null) _reader.CurrentTime = value; }
         }
 
-        public float Volumen
+        public float Volume
         {
-            get => _volumen;
+            get => _volume;
             set
             {
-                _volumen = Math.Clamp(value, 0f, 1f);
-                if (_lector != null) _lector.Volume = _volumen;
+                _volume = Math.Clamp(value, 0f, 1f);
+                if (_reader != null) _reader.Volume = _volume;
             }
         }
 
-        public void Play(string ruta)
+        public void Play(string filePath)
         {
             Stop();
 
-            var lector = new AudioFileReader(ruta) { Volume = _volumen };
-            var salida = new WaveOutEvent();
+            var reader = new AudioFileReader(filePath) { Volume = _volume };
+            var output = new WaveOutEvent();
             try
             {
-                salida.Init(lector);
+                output.Init(reader);
             }
             catch
             {
-                salida.Dispose();
-                lector.Dispose();
+                output.Dispose();
+                reader.Dispose();
                 throw;
             }
 
-            salida.PlaybackStopped += UponCompletion;
-            _lector = lector;
-            _salida = salida;
-            salida.Play();
+            output.PlaybackStopped += OnPlaybackStopped;
+            _reader = reader;
+            _output = output;
+            output.Play();
         }
 
         public void TogglePause()
         {
-            if (_salida == null) return;
+            if (_output == null) return;
 
-            if (_salida.PlaybackState == PlaybackState.Playing) _salida.Pause();
-            else if (_salida.PlaybackState == PlaybackState.Paused) _salida.Play();
+            if (_output.PlaybackState == PlaybackState.Playing) _output.Pause();
+            else if (_output.PlaybackState == PlaybackState.Paused) _output.Play();
         }
 
         public void Stop()
         {
-            if (_salida != null)
+            if (_output != null)
             {
-                _salida.PlaybackStopped -= UponCompletion;
-                _salida.Stop();
-                _salida.Dispose();
-                _salida = null;
+                _output.PlaybackStopped -= OnPlaybackStopped;
+                _output.Stop();
+                _output.Dispose();
+                _output = null;
             }
-            _lector?.Dispose();
-            _lector = null;
+            _reader?.Dispose();
+            _reader = null;
         }
 
-        private void UponCompletion(object? sender, StoppedEventArgs e)
+        private void OnPlaybackStopped(object? sender, StoppedEventArgs e)
         {
             Stop();
-            PistaTerminada?.Invoke(this, EventArgs.Empty);
+            TrackEnded?.Invoke(this, EventArgs.Empty);
         }
 
         public void Dispose() => Stop();

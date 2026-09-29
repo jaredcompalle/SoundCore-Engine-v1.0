@@ -129,6 +129,7 @@
             // numBpm
             // 
             numBpm.Location = new Point(581, 17);
+            numBpm.Maximum = new decimal(new int[] { 300, 0, 0, 0 });
             numBpm.Name = "numBpm";
             numBpm.Size = new Size(54, 23);
             numBpm.TabIndex = 12;
