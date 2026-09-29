@@ -1,34 +1,33 @@
 ﻿// SoundCore Engine v2.0 - TecNM Campus Monclova
-// Integrantes: [Nombre completo] - [No. de control]
-// Fecha: 28/09/2026 | Versión: 2.0
+// Integrantes: Rosembert Jared Ortiz Reyes - I25050406
+// Fecha: 28/09/2026 | Versión: 1.0
 
 using System.Collections;
 
 namespace SoundCore.EstructurasPropias
 {
-    public class Nodo<T>
+    public class Node<T>
     {
-        public T Valor { get; set; }
-        public Nodo<T>? Siguiente { get; set; }
+        public T Value { get; set; }
+        public Node<T>? Siguiente { get; set; }
 
-        public Nodo(T valor)
+        public Node(T valor)
         {
-            Valor = valor;
+            Value = valor;
             Siguiente = null;
         }
     }
 
-    public class ListaSimpleEnlazada<T> : IEnumerable<T>
+    public class SimpleLinkedList<T> : IEnumerable<T>
     {
-        public Nodo<T>? Cabeza { get; private set; }
+        public Node<T>? Cabeza { get; private set; }
         public int Conteo { get; private set; }
 
         public bool EstaVacia => Cabeza == null;
 
-        // 1. Inserción al final: O(n)
-        public void AgregarAlFinal(T valor)
+        public void AddToFinal(T valor)
         {
-            var nuevoNodo = new Nodo<T>(valor);
+            var nuevoNodo = new Node<T>(valor);
             if (EstaVacia)
             {
                 Cabeza = nuevoNodo;
@@ -43,10 +42,9 @@ namespace SoundCore.EstructurasPropias
             Conteo++;
         }
 
-        // 2. Up Next: inserción inmediata tras la cabeza: O(1)
-        public void ReproducirSiguiente(T valor)
+        public void PlayNext(T valor)
         {
-            var nuevoNodo = new Nodo<T>(valor);
+            var nuevoNodo = new Node<T>(valor);
             if (EstaVacia)
             {
                 Cabeza = nuevoNodo;
@@ -59,42 +57,39 @@ namespace SoundCore.EstructurasPropias
             Conteo++;
         }
 
-        // 3. Desencolar pista actual (eliminar cabeza): O(1)
-        public T AvanzarPista()
+        public T AdvanceTrack()
         {
             if (EstaVacia)
                 throw new InvalidOperationException("La cola de reproducción está vacía.");
 
-            T valor = Cabeza!.Valor;
+            T valor = Cabeza!.Value;
             Cabeza = Cabeza.Siguiente;
             Conteo--;
             return valor;
         }
 
-        // 4. Inversión in-place: O(n) tiempo, O(1) memoria auxiliar (solo se redirigen enlaces)
-        public void Invertir()
+        public void Invest()
         {
-            Nodo<T>? previo = null;
-            Nodo<T>? actual = Cabeza;
-            Nodo<T>? siguiente = null;
+            Node<T>? previo = null;
+            Node<T>? actual = Cabeza;
+            Node<T>? siguiente = null;
 
             while (actual != null)
             {
-                siguiente = actual.Siguiente; // Guardar puntero al resto de la lista
-                actual.Siguiente = previo;    // Invertir la referencia
-                previo = actual;              // Desplazar previo
-                actual = siguiente;           // Desplazar actual
+                siguiente = actual.Siguiente; 
+                actual.Siguiente = previo;   
+                previo = actual;            
+                actual = siguiente;          
             }
 
             Cabeza = previo;
         }
 
-        // 5. Inserción ordenada por criterio (ej. BPM): O(n)
-        public void InsertarOrdenado(T valor, Comparison<T> comparador)
+        public void InsertSort(T valor, Comparison<T> comparador)
         {
-            var nuevo = new Nodo<T>(valor);
+            var nuevo = new Node<T>(valor);
 
-            if (EstaVacia || comparador(valor, Cabeza!.Valor) < 0)
+            if (EstaVacia || comparador(valor, Cabeza!.Value) < 0)
             {
                 nuevo.Siguiente = Cabeza;
                 Cabeza = nuevo;
@@ -103,7 +98,7 @@ namespace SoundCore.EstructurasPropias
             }
 
             var actual = Cabeza;
-            while (actual.Siguiente != null && comparador(valor, actual.Siguiente.Valor) >= 0)
+            while (actual.Siguiente != null && comparador(valor, actual.Siguiente.Value) >= 0)
                 actual = actual.Siguiente;
 
             nuevo.Siguiente = actual.Siguiente;
@@ -111,8 +106,7 @@ namespace SoundCore.EstructurasPropias
             Conteo++;
         }
 
-        // 6. Depurar duplicados sin estructuras externas: O(n^2) tiempo, O(1) espacio
-        public void DepurarDuplicados(Func<T, T, bool> sonIguales)
+        public void DebugDuplicates(Func<T, T, bool> sonIguales)
         {
             var actual = Cabeza;
 
@@ -121,9 +115,9 @@ namespace SoundCore.EstructurasPropias
                 var corredor = actual;
                 while (corredor.Siguiente != null)
                 {
-                    if (sonIguales(actual.Valor, corredor.Siguiente.Valor))
+                    if (sonIguales(actual.Value, corredor.Siguiente.Value))
                     {
-                        corredor.Siguiente = corredor.Siguiente.Siguiente; // desconectar duplicado
+                        corredor.Siguiente = corredor.Siguiente.Siguiente;
                         Conteo--;
                     }
                     else
@@ -135,17 +129,16 @@ namespace SoundCore.EstructurasPropias
             }
         }
 
-        // Extra: ordenamiento por inserción in-place (estable) relinkeando nodos: O(n^2), O(1) espacio
-        public void Ordenar(Comparison<T> comparador)
+        public void Sort(Comparison<T> comparador)
         {
-            Nodo<T>? ordenada = null;
+            Node<T>? ordenada = null;
             var actual = Cabeza;
 
             while (actual != null)
             {
                 var siguiente = actual.Siguiente;
 
-                if (ordenada == null || comparador(actual.Valor, ordenada.Valor) < 0)
+                if (ordenada == null || comparador(actual.Value, ordenada.Value) < 0)
                 {
                     actual.Siguiente = ordenada;
                     ordenada = actual;
@@ -153,7 +146,7 @@ namespace SoundCore.EstructurasPropias
                 else
                 {
                     var p = ordenada;
-                    while (p.Siguiente != null && comparador(actual.Valor, p.Siguiente.Valor) >= 0)
+                    while (p.Siguiente != null && comparador(actual.Value, p.Siguiente.Value) >= 0)
                         p = p.Siguiente;
                     actual.Siguiente = p.Siguiente;
                     p.Siguiente = actual;
@@ -164,7 +157,7 @@ namespace SoundCore.EstructurasPropias
             Cabeza = ordenada;
         }
 
-        public void Limpiar()
+        public void Clean()
         {
             Cabeza = null;
             Conteo = 0;
@@ -175,7 +168,7 @@ namespace SoundCore.EstructurasPropias
             var actual = Cabeza;
             while (actual != null)
             {
-                yield return actual.Valor;
+                yield return actual.Value;
                 actual = actual.Siguiente;
             }
         }

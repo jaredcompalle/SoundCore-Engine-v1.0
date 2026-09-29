@@ -1,22 +1,18 @@
 ﻿// SoundCore Engine v2.0 - TecNM Campus Monclova
-// Integrantes: [Nombre completo] - [No. de control]
-// Fecha: 28/09/2026 | Versión: 2.0
+// Integrantes: Rosembert Jared Ortiz Reyes - I25050406
+// Fecha: 28/09/2026 | Versión: 1.0
 
 using NAudio.Wave;
 
 namespace SoundCore.EstructurasPropias
 {
-    /// <summary>
-    /// Envoltorio sobre NAudio (WaveOutEvent + AudioFileReader).
-    /// Debe crearse en el hilo de UI para que PlaybackStopped llegue a ese mismo hilo.
-    /// </summary>
-    public sealed class ReproductorAudio : IDisposable
+  
+    public sealed class PlayerAudio : IDisposable
     {
         private WaveOutEvent? _salida;
         private AudioFileReader? _lector;
         private float _volumen = 0.8f;
 
-        /// <summary>Se dispara solo cuando la pista termina de forma natural (no al detener manualmente).</summary>
         public event EventHandler? PistaTerminada;
 
         public bool TieneAudio => _lector != null;
@@ -39,9 +35,9 @@ namespace SoundCore.EstructurasPropias
             }
         }
 
-        public void Reproducir(string ruta)
+        public void Play(string ruta)
         {
-            Detener();
+            Stop();
 
             var lector = new AudioFileReader(ruta) { Volume = _volumen };
             var salida = new WaveOutEvent();
@@ -56,13 +52,13 @@ namespace SoundCore.EstructurasPropias
                 throw;
             }
 
-            salida.PlaybackStopped += AlTerminar;
+            salida.PlaybackStopped += UponCompletion;
             _lector = lector;
             _salida = salida;
             salida.Play();
         }
 
-        public void AlternarPausa()
+        public void TogglePause()
         {
             if (_salida == null) return;
 
@@ -70,11 +66,11 @@ namespace SoundCore.EstructurasPropias
             else if (_salida.PlaybackState == PlaybackState.Paused) _salida.Play();
         }
 
-        public void Detener()
+        public void Stop()
         {
             if (_salida != null)
             {
-                _salida.PlaybackStopped -= AlTerminar; // evita disparar PistaTerminada al detener a mano
+                _salida.PlaybackStopped -= UponCompletion;
                 _salida.Stop();
                 _salida.Dispose();
                 _salida = null;
@@ -83,12 +79,12 @@ namespace SoundCore.EstructurasPropias
             _lector = null;
         }
 
-        private void AlTerminar(object? sender, StoppedEventArgs e)
+        private void UponCompletion(object? sender, StoppedEventArgs e)
         {
-            Detener();
+            Stop();
             PistaTerminada?.Invoke(this, EventArgs.Empty);
         }
 
-        public void Dispose() => Detener();
+        public void Dispose() => Stop();
     }
 }

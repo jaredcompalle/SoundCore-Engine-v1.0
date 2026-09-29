@@ -31,45 +31,45 @@
             components = new System.ComponentModel.Container();
             label5 = new Label();
             label6 = new Label();
-            rbPropia = new RadioButton();
+            rbOwn = new RadioButton();
             panel1 = new Panel();
             label3 = new Label();
             numBpm = new NumericUpDown();
             rbList = new RadioButton();
             rbLinkedList = new RadioButton();
-            btnPausa = new Button();
+            btnPause = new Button();
             panel2 = new Panel();
-            btnPurgar = new Button();
-            btnOrdenarBpm = new Button();
-            btnInvertir = new Button();
-            btnAvanzar = new Button();
-            btnReproducirSiguiente = new Button();
-            btnEncolarFinal = new Button();
+            btnPurge = new Button();
+            btnSortBpm = new Button();
+            btnInvest = new Button();
+            btnAdvance = new Button();
+            btnPlayNext = new Button();
+            btnInFinalStrain = new Button();
             label7 = new Label();
             panel3 = new Panel();
             label2 = new Label();
-            tbVolumen = new TrackBar();
-            lblTiempo = new Label();
-            btnDetener = new Button();
-            tbPosicion = new TrackBar();
-            lblEstadisticas = new Label();
-            dgvCola = new DataGridView();
+            tbVolume = new TrackBar();
+            lblTime = new Label();
+            btnStop = new Button();
+            tbPosition = new TrackBar();
+            lblStadistics = new Label();
+            dgvTail = new DataGridView();
             lblNowPlaying = new Label();
             label8 = new Label();
             panel4 = new Panel();
             label1 = new Label();
             numBenchMark = new NumericUpDown();
             btnBenchmark = new Button();
-            txtResultadosBenchmark = new TextBox();
+            txtResultsBenchmark = new TextBox();
             label10 = new Label();
-            timerReproductor = new System.Windows.Forms.Timer(components);
+            timerPlayer = new System.Windows.Forms.Timer(components);
             panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numBpm).BeginInit();
             panel2.SuspendLayout();
             panel3.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)tbVolumen).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)tbPosicion).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)dgvCola).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)tbVolume).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)tbPosition).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dgvTail).BeginInit();
             panel4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)numBenchMark).BeginInit();
             SuspendLayout();
@@ -92,16 +92,16 @@
             label6.TabIndex = 5;
             label6.Text = "Modo de estructura :";
             // 
-            // rbPropia
+            // rbOwn
             // 
-            rbPropia.AutoSize = true;
-            rbPropia.Location = new Point(128, 23);
-            rbPropia.Name = "rbPropia";
-            rbPropia.Size = new Size(171, 19);
-            rbPropia.TabIndex = 9;
-            rbPropia.TabStop = true;
-            rbPropia.Text = "Lista Simple Propia (Nodos)";
-            rbPropia.UseVisualStyleBackColor = true;
+            rbOwn.AutoSize = true;
+            rbOwn.Location = new Point(128, 23);
+            rbOwn.Name = "rbOwn";
+            rbOwn.Size = new Size(171, 19);
+            rbOwn.TabIndex = 9;
+            rbOwn.TabStop = true;
+            rbOwn.Text = "Lista Simple Propia (Nodos)";
+            rbOwn.UseVisualStyleBackColor = true;
             // 
             // panel1
             // 
@@ -110,7 +110,7 @@
             panel1.Controls.Add(rbList);
             panel1.Controls.Add(rbLinkedList);
             panel1.Controls.Add(label5);
-            panel1.Controls.Add(rbPropia);
+            panel1.Controls.Add(rbOwn);
             panel1.Controls.Add(label6);
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
@@ -155,89 +155,89 @@
             rbLinkedList.Text = ".NET LinkedList<T>";
             rbLinkedList.UseVisualStyleBackColor = true;
             // 
-            // btnPausa
+            // btnPause
             // 
-            btnPausa.Location = new Point(16, 91);
-            btnPausa.Name = "btnPausa";
-            btnPausa.Size = new Size(88, 23);
-            btnPausa.TabIndex = 12;
-            btnPausa.Text = "Play / Pausa";
-            btnPausa.UseVisualStyleBackColor = true;
-            btnPausa.Click += btnPausa_Click;
+            btnPause.Location = new Point(16, 91);
+            btnPause.Name = "btnPause";
+            btnPause.Size = new Size(88, 23);
+            btnPause.TabIndex = 12;
+            btnPause.Text = "Play / Pausa";
+            btnPause.UseVisualStyleBackColor = true;
+            btnPause.Click += btnPause_Click;
             // 
             // panel2
             // 
-            panel2.Controls.Add(btnPurgar);
-            panel2.Controls.Add(btnOrdenarBpm);
-            panel2.Controls.Add(btnInvertir);
-            panel2.Controls.Add(btnAvanzar);
-            panel2.Controls.Add(btnReproducirSiguiente);
-            panel2.Controls.Add(btnEncolarFinal);
+            panel2.Controls.Add(btnPurge);
+            panel2.Controls.Add(btnSortBpm);
+            panel2.Controls.Add(btnInvest);
+            panel2.Controls.Add(btnAdvance);
+            panel2.Controls.Add(btnPlayNext);
+            panel2.Controls.Add(btnInFinalStrain);
             panel2.Controls.Add(label7);
             panel2.Location = new Point(0, 54);
             panel2.Name = "panel2";
             panel2.Size = new Size(207, 306);
             panel2.TabIndex = 11;
             // 
-            // btnPurgar
+            // btnPurge
             // 
-            btnPurgar.Location = new Point(9, 246);
-            btnPurgar.Name = "btnPurgar";
-            btnPurgar.Size = new Size(195, 36);
-            btnPurgar.TabIndex = 18;
-            btnPurgar.Text = "Purgar duplicados";
-            btnPurgar.UseVisualStyleBackColor = true;
-            btnPurgar.Click += btnPurgar_Click;
+            btnPurge.Location = new Point(9, 246);
+            btnPurge.Name = "btnPurge";
+            btnPurge.Size = new Size(195, 36);
+            btnPurge.TabIndex = 18;
+            btnPurge.Text = "Purgar duplicados";
+            btnPurge.UseVisualStyleBackColor = true;
+            btnPurge.Click += btnPurge_Click;
             // 
-            // btnOrdenarBpm
+            // btnSortBpm
             // 
-            btnOrdenarBpm.Location = new Point(9, 204);
-            btnOrdenarBpm.Name = "btnOrdenarBpm";
-            btnOrdenarBpm.Size = new Size(195, 36);
-            btnOrdenarBpm.TabIndex = 17;
-            btnOrdenarBpm.Text = "Ordenar por curva Bpm";
-            btnOrdenarBpm.UseVisualStyleBackColor = true;
-            btnOrdenarBpm.Click += btnOrdenarBpm_Click;
+            btnSortBpm.Location = new Point(9, 204);
+            btnSortBpm.Name = "btnSortBpm";
+            btnSortBpm.Size = new Size(195, 36);
+            btnSortBpm.TabIndex = 17;
+            btnSortBpm.Text = "Ordenar por curva Bpm";
+            btnSortBpm.UseVisualStyleBackColor = true;
+            btnSortBpm.Click += btnSortBpm_Click;
             // 
-            // btnInvertir
+            // btnInvest
             // 
-            btnInvertir.Location = new Point(9, 162);
-            btnInvertir.Name = "btnInvertir";
-            btnInvertir.Size = new Size(195, 36);
-            btnInvertir.TabIndex = 16;
-            btnInvertir.Text = "Invertir lista (in place)";
-            btnInvertir.UseVisualStyleBackColor = true;
-            btnInvertir.Click += btnInvertir_Click;
+            btnInvest.Location = new Point(9, 162);
+            btnInvest.Name = "btnInvest";
+            btnInvest.Size = new Size(195, 36);
+            btnInvest.TabIndex = 16;
+            btnInvest.Text = "Invertir lista (in place)";
+            btnInvest.UseVisualStyleBackColor = true;
+            btnInvest.Click += btnInvest_Click;
             // 
-            // btnAvanzar
+            // btnAdvance
             // 
-            btnAvanzar.Location = new Point(9, 120);
-            btnAvanzar.Name = "btnAvanzar";
-            btnAvanzar.Size = new Size(195, 36);
-            btnAvanzar.TabIndex = 15;
-            btnAvanzar.Text = "Avanzar pista";
-            btnAvanzar.UseVisualStyleBackColor = true;
-            btnAvanzar.Click += btnAvanzar_Click;
+            btnAdvance.Location = new Point(9, 120);
+            btnAdvance.Name = "btnAdvance";
+            btnAdvance.Size = new Size(195, 36);
+            btnAdvance.TabIndex = 15;
+            btnAdvance.Text = "Avanzar pista";
+            btnAdvance.UseVisualStyleBackColor = true;
+            btnAdvance.Click += btnAdvance_Click;
             // 
-            // btnReproducirSiguiente
+            // btnPlayNext
             // 
-            btnReproducirSiguiente.Location = new Point(9, 74);
-            btnReproducirSiguiente.Name = "btnReproducirSiguiente";
-            btnReproducirSiguiente.Size = new Size(195, 36);
-            btnReproducirSiguiente.TabIndex = 14;
-            btnReproducirSiguiente.Text = "Reproducir siguiente";
-            btnReproducirSiguiente.UseVisualStyleBackColor = true;
-            btnReproducirSiguiente.Click += btnReproducirSiguiente_Click;
+            btnPlayNext.Location = new Point(9, 74);
+            btnPlayNext.Name = "btnPlayNext";
+            btnPlayNext.Size = new Size(195, 36);
+            btnPlayNext.TabIndex = 14;
+            btnPlayNext.Text = "Reproducir siguiente";
+            btnPlayNext.UseVisualStyleBackColor = true;
+            btnPlayNext.Click += btnPlayNext_Click;
             // 
-            // btnEncolarFinal
+            // btnInFinalStrain
             // 
-            btnEncolarFinal.Location = new Point(9, 25);
-            btnEncolarFinal.Name = "btnEncolarFinal";
-            btnEncolarFinal.Size = new Size(195, 36);
-            btnEncolarFinal.TabIndex = 13;
-            btnEncolarFinal.Text = "Encolar al final";
-            btnEncolarFinal.UseVisualStyleBackColor = true;
-            btnEncolarFinal.Click += btnAgregarMusica_Click;
+            btnInFinalStrain.Location = new Point(9, 25);
+            btnInFinalStrain.Name = "btnInFinalStrain";
+            btnInFinalStrain.Size = new Size(195, 36);
+            btnInFinalStrain.TabIndex = 13;
+            btnInFinalStrain.Text = "Encolar al final";
+            btnInFinalStrain.UseVisualStyleBackColor = true;
+            btnInFinalStrain.Click += btnAddMusic_Click;
             // 
             // label7
             // 
@@ -251,13 +251,13 @@
             // panel3
             // 
             panel3.Controls.Add(label2);
-            panel3.Controls.Add(tbVolumen);
-            panel3.Controls.Add(lblTiempo);
-            panel3.Controls.Add(btnDetener);
-            panel3.Controls.Add(btnPausa);
-            panel3.Controls.Add(tbPosicion);
-            panel3.Controls.Add(lblEstadisticas);
-            panel3.Controls.Add(dgvCola);
+            panel3.Controls.Add(tbVolume);
+            panel3.Controls.Add(lblTime);
+            panel3.Controls.Add(btnStop);
+            panel3.Controls.Add(btnPause);
+            panel3.Controls.Add(tbPosition);
+            panel3.Controls.Add(lblStadistics);
+            panel3.Controls.Add(dgvTail);
             panel3.Controls.Add(lblNowPlaying);
             panel3.Controls.Add(label8);
             panel3.Location = new Point(213, 54);
@@ -274,73 +274,73 @@
             label2.Text = "🔊";
             label2.TextAlign = ContentAlignment.MiddleCenter;
             // 
-            // tbVolumen
+            // tbVolume
             // 
-            tbVolumen.AutoSize = false;
-            tbVolumen.Location = new Point(332, 91);
-            tbVolumen.Margin = new Padding(3, 8, 3, 0);
-            tbVolumen.Maximum = 100;
-            tbVolumen.Name = "tbVolumen";
-            tbVolumen.Size = new Size(159, 23);
-            tbVolumen.TabIndex = 24;
-            tbVolumen.TickStyle = TickStyle.None;
-            tbVolumen.Value = 80;
-            tbVolumen.Scroll += tbVolumen_Scroll;
+            tbVolume.AutoSize = false;
+            tbVolume.Location = new Point(332, 91);
+            tbVolume.Margin = new Padding(3, 8, 3, 0);
+            tbVolume.Maximum = 100;
+            tbVolume.Name = "tbVolume";
+            tbVolume.Size = new Size(159, 23);
+            tbVolume.TabIndex = 24;
+            tbVolume.TickStyle = TickStyle.None;
+            tbVolume.Value = 80;
+            tbVolume.Scroll += tbVolume_Scroll;
             // 
-            // lblTiempo
+            // lblTime
             // 
-            lblTiempo.AutoSize = true;
-            lblTiempo.Location = new Point(204, 95);
-            lblTiempo.Name = "lblTiempo";
-            lblTiempo.Size = new Size(72, 15);
-            lblTiempo.TabIndex = 23;
-            lblTiempo.Text = "00:00 / 00:00";
+            lblTime.AutoSize = true;
+            lblTime.Location = new Point(204, 95);
+            lblTime.Name = "lblTime";
+            lblTime.Size = new Size(72, 15);
+            lblTime.TabIndex = 23;
+            lblTime.Text = "00:00 / 00:00";
             // 
-            // btnDetener
+            // btnStop
             // 
-            btnDetener.Location = new Point(110, 91);
-            btnDetener.Name = "btnDetener";
-            btnDetener.Size = new Size(88, 23);
-            btnDetener.TabIndex = 20;
-            btnDetener.Text = "Detener";
-            btnDetener.UseVisualStyleBackColor = true;
-            btnDetener.Click += btnDetener_Click;
+            btnStop.Location = new Point(110, 91);
+            btnStop.Name = "btnStop";
+            btnStop.Size = new Size(88, 23);
+            btnStop.TabIndex = 20;
+            btnStop.Text = "Detener";
+            btnStop.UseVisualStyleBackColor = true;
+            btnStop.Click += btnStop_Click;
             // 
-            // tbPosicion
+            // tbPosition
             // 
-            tbPosicion.AutoSize = false;
-            tbPosicion.LargeChange = 50;
-            tbPosicion.Location = new Point(9, 53);
-            tbPosicion.Maximum = 1000;
-            tbPosicion.Name = "tbPosicion";
-            tbPosicion.Size = new Size(641, 32);
-            tbPosicion.TabIndex = 19;
-            tbPosicion.TickStyle = TickStyle.None;
-            tbPosicion.MouseDown += tbPosicion_MouseDown;
-            tbPosicion.MouseUp += tbPosicion_MouseUp;
+            tbPosition.AutoSize = false;
+            tbPosition.LargeChange = 50;
+            tbPosition.Location = new Point(9, 53);
+            tbPosition.Maximum = 1000;
+            tbPosition.Name = "tbPosition";
+            tbPosition.Size = new Size(641, 32);
+            tbPosition.TabIndex = 19;
+            tbPosition.TickStyle = TickStyle.None;
+            tbPosition.MouseDown += tbPosition_MouseDown;
+            tbPosition.MouseUp += tbPosition_MouseUp;
             // 
-            // lblEstadisticas
+            // lblStadistics
             // 
-            lblEstadisticas.AutoSize = true;
-            lblEstadisticas.Location = new Point(16, 282);
-            lblEstadisticas.Name = "lblEstadisticas";
-            lblEstadisticas.Size = new Size(77, 15);
-            lblEstadisticas.TabIndex = 18;
-            lblEstadisticas.Text = "Total en cola:";
+            lblStadistics.AutoSize = true;
+            lblStadistics.Location = new Point(16, 282);
+            lblStadistics.Name = "lblStadistics";
+            lblStadistics.Size = new Size(77, 15);
+            lblStadistics.TabIndex = 18;
+            lblStadistics.Text = "Total en cola:";
             // 
-            // dgvCola
+            // dgvTail
             // 
-            dgvCola.AllowUserToAddRows = false;
-            dgvCola.AllowUserToDeleteRows = false;
-            dgvCola.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dgvCola.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvCola.Location = new Point(16, 120);
-            dgvCola.Name = "dgvCola";
-            dgvCola.ReadOnly = true;
-            dgvCola.RowHeadersVisible = false;
-            dgvCola.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvCola.Size = new Size(650, 159);
-            dgvCola.TabIndex = 17;
+            dgvTail.AllowUserToAddRows = false;
+            dgvTail.AllowUserToDeleteRows = false;
+            dgvTail.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvTail.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvTail.Location = new Point(16, 120);
+            dgvTail.Name = "dgvTail";
+            dgvTail.ReadOnly = true;
+            dgvTail.RowHeadersVisible = false;
+            dgvTail.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvTail.Size = new Size(650, 159);
+            dgvTail.TabIndex = 17;
             // 
             // lblNowPlaying
             // 
@@ -365,7 +365,7 @@
             panel4.Controls.Add(label1);
             panel4.Controls.Add(numBenchMark);
             panel4.Controls.Add(btnBenchmark);
-            panel4.Controls.Add(txtResultadosBenchmark);
+            panel4.Controls.Add(txtResultsBenchmark);
             panel4.Controls.Add(label10);
             panel4.Location = new Point(0, 366);
             panel4.Name = "panel4";
@@ -384,7 +384,7 @@
             // numBenchMark
             // 
             numBenchMark.Location = new Point(152, 19);
-            numBenchMark.Maximum = new decimal(new int[] { 3000, 0, 0, 0 });
+            numBenchMark.Maximum = new decimal(new int[] { 30000, 0, 0, 0 });
             numBenchMark.Name = "numBenchMark";
             numBenchMark.Size = new Size(58, 23);
             numBenchMark.TabIndex = 25;
@@ -400,14 +400,14 @@
             btnBenchmark.UseVisualStyleBackColor = true;
             btnBenchmark.Click += btnBenchmark_Click;
             // 
-            // txtResultadosBenchmark
+            // txtResultsBenchmark
             // 
-            txtResultadosBenchmark.Location = new Point(12, 41);
-            txtResultadosBenchmark.Multiline = true;
-            txtResultadosBenchmark.Name = "txtResultadosBenchmark";
-            txtResultadosBenchmark.ReadOnly = true;
-            txtResultadosBenchmark.Size = new Size(867, 149);
-            txtResultadosBenchmark.TabIndex = 20;
+            txtResultsBenchmark.Location = new Point(12, 41);
+            txtResultsBenchmark.Multiline = true;
+            txtResultsBenchmark.Name = "txtResultsBenchmark";
+            txtResultsBenchmark.ReadOnly = true;
+            txtResultsBenchmark.Size = new Size(867, 149);
+            txtResultsBenchmark.TabIndex = 20;
             // 
             // label10
             // 
@@ -418,11 +418,11 @@
             label10.TabIndex = 19;
             label10.Text = "[ PANEL DE BENCHMARK Y TELEMETRÍA ]";
             // 
-            // timerReproductor
+            // timerPlayer
             // 
-            timerReproductor.Enabled = true;
-            timerReproductor.Interval = 250;
-            timerReproductor.Tick += timerReproductor_Tick;
+            timerPlayer.Enabled = true;
+            timerPlayer.Interval = 250;
+            timerPlayer.Tick += timerPlayer_Tick;
             // 
             // Form1
             // 
@@ -442,9 +442,9 @@
             panel2.PerformLayout();
             panel3.ResumeLayout(false);
             panel3.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)tbVolumen).EndInit();
-            ((System.ComponentModel.ISupportInitialize)tbPosicion).EndInit();
-            ((System.ComponentModel.ISupportInitialize)dgvCola).EndInit();
+            ((System.ComponentModel.ISupportInitialize)tbVolume).EndInit();
+            ((System.ComponentModel.ISupportInitialize)tbPosition).EndInit();
+            ((System.ComponentModel.ISupportInitialize)dgvTail).EndInit();
             panel4.ResumeLayout(false);
             panel4.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)numBenchMark).EndInit();
@@ -454,7 +454,7 @@
         #endregion
         private Label label5;
         private Label label6;
-        private RadioButton rbPropia;
+        private RadioButton rbOwn;
         private Panel panel1;
         private RadioButton rbList;
         private RadioButton rbLinkedList;
@@ -462,25 +462,25 @@
         private Label label7;
         private Panel panel3;
         private Label label8;
-        private DataGridView dgvCola;
+        private DataGridView dgvTail;
         private Label lblNowPlaying;
-        private Button btnReproducirSiguiente;
-        private Button btnEncolarFinal;
-        private Button btnOrdenarBpm;
-        private Button btnInvertir;
-        private Button btnAvanzar;
-        private Button btnPurgar;
-        private Label lblEstadisticas;
+        private Button btnPlayNext;
+        private Button btnInFinalStrain;
+        private Button btnSortBpm;
+        private Button btnInvest;
+        private Button btnAdvance;
+        private Button btnPurge;
+        private Label lblStadistics;
         private Panel panel4;
         private Label label10;
-        private TextBox txtResultadosBenchmark;
+        private TextBox txtResultsBenchmark;
         private Button btnBenchmark;
-        private Button btnPausa;
-        private Button btnDetener;
-        private TrackBar tbPosicion;
-        private TrackBar tbVolumen;
-        private Label lblTiempo;
-        private System.Windows.Forms.Timer timerReproductor;
+        private Button btnPause;
+        private Button btnStop;
+        private TrackBar tbPosition;
+        private TrackBar tbVolume;
+        private Label lblTime;
+        private System.Windows.Forms.Timer timerPlayer;
         private Label label1;
         private NumericUpDown numBenchMark;
         private Label label2;

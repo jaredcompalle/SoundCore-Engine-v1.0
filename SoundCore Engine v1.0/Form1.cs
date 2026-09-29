@@ -1,3 +1,7 @@
+// SoundCore Engine v2.0 - TecNM Campus Monclova
+// Integrantes: Rosembert Jared Ortiz Reyes - I25050406
+// Fecha: 28/09/2026 | Versión: 1.0
+
 using SoundCore.EstructurasPropias;
 using System.Diagnostics;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -7,17 +11,16 @@ namespace SoundCore_Engine_v1._0
 {
     public partial class Form1 : Form
     {
-        private enum Modo { Propia, LinkedList, List }
+        private enum Modo { Own, LinkedList, List }
 
-        // Estructuras paralelas (solo la activa contiene la cola en cada momento)
-        private readonly ListaSimpleEnlazada<Pista> _colaPropia = new();
-        private readonly LinkedList<Pista> _colaLinkedList = new();
-        private readonly List<Pista> _colaList = new();
+        private readonly SimpleLinkedList<Track> _colaPropia = new();
+        private readonly LinkedList<Track> _colaLinkedList = new();
+        private readonly List<Track> _colaList = new();
 
-        private readonly ReproductorAudio _reproductor = new();
-        private Modo _modo = Modo.Propia;
+        private readonly PlayerAudio _reproductor = new();
+        private Modo _modo = Modo.Own;
         private int _contadorId = 1;
-        private Pista? _pistaSonando;
+        private Track? _pistaSonando;
         private bool _arrastrandoPosicion;
 
         private const string FiltroAudio =
@@ -26,61 +29,59 @@ namespace SoundCore_Engine_v1._0
         public Form1()
         {
             InitializeComponent();
-            ConfigurarColumnasGrid();
-            _reproductor.PistaTerminada += (_, _) => AvanzarCola(mostrarAvisoSiVacia: false); // auto-avance
-            RefrescarVista();
+            ConfigureColumnsGrid();
+            _reproductor.PistaTerminada += (_, _) => AdvanceEnqueue(mostrarAvisoSiVacia: false); 
+            RefreshView();
         }
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            timerReproductor.Stop();
+            timerPlayer.Stop();
             _reproductor.Dispose();
             base.OnFormClosed(e);
         }
 
-        // ───────────────────────── Estructura activa ─────────────────────────
 
-        private IEnumerable<Pista> Coleccion => _modo switch
+        private IEnumerable<Track> Coleccion => _modo switch
         {
-            Modo.Propia => _colaPropia,
+            Modo.Own => _colaPropia,
             Modo.LinkedList => _colaLinkedList,
             _ => _colaList
         };
 
-        private void rbEstructura_CheckedChanged(object? sender, EventArgs e)
+        private void rbStructure_CheckedChanged(object? sender, EventArgs e)
         {
             if (sender is not RadioButton { Checked: true }) return;
 
-            var nuevo = rbPropia.Checked ? Modo.Propia : rbLinkedList.Checked ? Modo.LinkedList : Modo.List;
+            var nuevo = rbOwn.Checked ? Modo.Own : rbLinkedList.Checked ? Modo.LinkedList : Modo.List;
             if (nuevo == _modo) return;
 
-            // Migrar la cola actual a la nueva estructura para que el cambio sea reactivo y coherente
             var snapshot = Coleccion.ToList();
-            _colaPropia.Limpiar();
+            _colaPropia.Clean();
             _colaLinkedList.Clear();
             _colaList.Clear();
             _modo = nuevo;
 
-            foreach (var p in snapshot) EncolarFinal(p);
-            RefrescarVista();
+            foreach (var p in snapshot) GlueFinal(p);
+            RefreshView();
         }
 
-        private void EncolarFinal(Pista p)
+        private void GlueFinal(Track p)
         {
             switch (_modo)
             {
-                case Modo.Propia: _colaPropia.AgregarAlFinal(p); break;
+                case Modo.Own: _colaPropia.AddToFinal(p); break;
                 case Modo.LinkedList: _colaLinkedList.AddLast(p); break;
                 default: _colaList.Add(p); break;
             }
         }
 
-        private void EncolarUpNext(Pista p)
+        private void GlueUpNext(Track p)
         {
             switch (_modo)
             {
-                case Modo.Propia:
-                    _colaPropia.ReproducirSiguiente(p);
+                case Modo.Own:
+                    _colaPropia.PlayNext(p);
                     break;
                 case Modo.LinkedList:
                     if (_colaLinkedList.First == null) _colaLinkedList.AddFirst(p);
@@ -93,12 +94,12 @@ namespace SoundCore_Engine_v1._0
             }
         }
 
-        private Pista? Desencolar()
+        private Track? Uncollect()
         {
             switch (_modo)
             {
-                case Modo.Propia:
-                    return _colaPropia.EstaVacia ? null : _colaPropia.AvanzarPista();
+                case Modo.Own:
+                    return _colaPropia.EstaVacia ? null : _colaPropia.AdvanceTrack();
                 case Modo.LinkedList:
                     {
                         var primero = _colaLinkedList.First;
@@ -116,10 +117,8 @@ namespace SoundCore_Engine_v1._0
             }
         }
 
-        // ───────────────────────── Explorador de archivos + NAudio ─────────────────────────
 
-        /// <summary>Abre el explorador de archivos y crea una Pista por cada audio elegido.</summary>
-        private List<Pista> PedirPistas(string titulo)
+        private List<Track> AskTracks(string titulo)
         {
             using var dlg = new OpenFileDialog
             {
@@ -130,12 +129,12 @@ namespace SoundCore_Engine_v1._0
             };
             if (dlg.ShowDialog(this) != DialogResult.OK) return [];
 
-            var pistas = new List<Pista>();
+            var pistas = new List<Track>();
             var fallidos = new List<string>();
 
             foreach (var ruta in dlg.FileNames)
             {
-                try { pistas.Add(CrearPista(ruta)); }
+                try { pistas.Add(CreateTrack(ruta)); }
                 catch (Exception) { fallidos.Add(Path.GetFileName(ruta)); }
             }
 
@@ -146,13 +145,11 @@ namespace SoundCore_Engine_v1._0
             return pistas;
         }
 
-        private Pista CrearPista(string ruta)
+        private Track CreateTrack(string ruta)
         {
-            // NAudio abre el archivo para obtener la duración real
             using var lector = new AudioFileReader(ruta);
             int duracion = (int)Math.Round(lector.TotalTime.TotalSeconds);
 
-            // NAudio no lee etiquetas ID3: se deduce "Artista - Título" del nombre del archivo
             string nombre = Path.GetFileNameWithoutExtension(ruta);
             string artista = "Artista desconocido";
             string titulo = nombre;
@@ -174,14 +171,14 @@ namespace SoundCore_Engine_v1._0
                 titulo = nombre[(sep + 3)..].Trim();
             }
 
-            return new Pista(_contadorId++, titulo, artista, (int)bpm, duracion, ruta);
+            return new Track(_contadorId++, titulo, artista, (int)bpm, duracion, ruta);
         }
 
-        private void ReproducirPista(Pista p)
+        private void PlayTrack(Track p)
         {
             try
             {
-                _reproductor.Reproducir(p.RutaArchivo);
+                _reproductor.Play(p.RutaArchivo);
                 _pistaSonando = p;
                 lblNowPlaying.Text = $"▶ Sonando: {p.Titulo} - {p.Artista} ({p.Bpm} BPM)";
                 lblNowPlaying.ForeColor = Color.DarkGreen;
@@ -196,31 +193,29 @@ namespace SoundCore_Engine_v1._0
             }
         }
 
-        // ───────────────────────── Acciones de cola ─────────────────────────
 
-        private void btnAgregarMusica_Click(object? sender, EventArgs e)
+        private void btnAddMusic_Click(object? sender, EventArgs e)
         {
-            foreach (var p in PedirPistas("Selecciona la música que quieres encolar al final"))
-                EncolarFinal(p);
-            RefrescarVista();
+            foreach (var p in AskTracks("Selecciona la música que quieres encolar al final"))
+                GlueFinal(p);
+            RefreshView();
         }
 
-        private void btnReproducirSiguiente_Click(object? sender, EventArgs e)
+        private void btnPlayNext_Click(object? sender, EventArgs e)
         {
-            var pistas = PedirPistas("Selecciona la música para Up Next");
+            var pistas = AskTracks("Selecciona la música para Up Next");
 
-            // Se insertan en orden inverso para que queden en el orden en que se eligieron
             for (int i = pistas.Count - 1; i >= 0; i--)
-                EncolarUpNext(pistas[i]);
+                GlueUpNext(pistas[i]);
 
-            RefrescarVista();
+            RefreshView();
         }
 
-        private void btnAvanzar_Click(object? sender, EventArgs e) => AvanzarCola(mostrarAvisoSiVacia: true);
+        private void btnAdvance_Click(object? sender, EventArgs e) => AdvanceEnqueue(mostrarAvisoSiVacia: true);
 
-        private void AvanzarCola(bool mostrarAvisoSiVacia)
+        private void AdvanceEnqueue(bool mostrarAvisoSiVacia)
         {
-            var siguiente = Desencolar();
+            var siguiente = Uncollect();
 
             if (siguiente == null)
             {
@@ -231,7 +226,7 @@ namespace SoundCore_Engine_v1._0
                 }
                 else
                 {
-                    _reproductor.Detener();
+                    _reproductor.Stop();
                     _pistaSonando = null;
                     lblNowPlaying.Text = "⏹ Fin del setlist";
                     lblNowPlaying.ForeColor = Color.DimGray;
@@ -239,18 +234,18 @@ namespace SoundCore_Engine_v1._0
             }
             else
             {
-                ReproducirPista(siguiente);
+                PlayTrack(siguiente);
             }
 
-            RefrescarVista();
+            RefreshView();
         }
 
-        private void btnInvertir_Click(object? sender, EventArgs e)
+        private void btnInvest_Click(object? sender, EventArgs e)
         {
             switch (_modo)
             {
-                case Modo.Propia:
-                    _colaPropia.Invertir();
+                case Modo.Own:
+                    _colaPropia.Invest();
                     break;
                 case Modo.LinkedList:
                     var invertida = _colaLinkedList.Reverse().ToList();
@@ -261,15 +256,15 @@ namespace SoundCore_Engine_v1._0
                     _colaList.Reverse();
                     break;
             }
-            RefrescarVista();
+            RefreshView();
         }
 
-        private void btnOrdenarBpm_Click(object? sender, EventArgs e)
+        private void btnSortBpm_Click(object? sender, EventArgs e)
         {
             switch (_modo)
             {
-                case Modo.Propia:
-                    _colaPropia.Ordenar((a, b) => a.Bpm.CompareTo(b.Bpm));
+                case Modo.Own:
+                    _colaPropia.Sort((a, b) => a.Bpm.CompareTo(b.Bpm));
                     break;
                 case Modo.LinkedList:
                     var ordenadasLl = _colaLinkedList.OrderBy(p => p.Bpm).ToList();
@@ -282,15 +277,15 @@ namespace SoundCore_Engine_v1._0
                     _colaList.AddRange(ordenadasL);
                     break;
             }
-            RefrescarVista();
+            RefreshView();
         }
 
-        private void btnPurgar_Click(object? sender, EventArgs e)
+        private void btnPurge_Click(object? sender, EventArgs e)
         {
             switch (_modo)
             {
-                case Modo.Propia:
-                    _colaPropia.DepurarDuplicados((a, b) => a.Titulo.Equals(b.Titulo, StringComparison.OrdinalIgnoreCase));
+                case Modo.Own:
+                    _colaPropia.DebugDuplicates((a, b) => a.Titulo.Equals(b.Titulo, StringComparison.OrdinalIgnoreCase));
                     break;
                 case Modo.LinkedList:
                     var unicosLl = _colaLinkedList.DistinctBy(p => p.Titulo, StringComparer.OrdinalIgnoreCase).ToList();
@@ -303,41 +298,40 @@ namespace SoundCore_Engine_v1._0
                     _colaList.AddRange(unicosL);
                     break;
             }
-            RefrescarVista();
+            RefreshView();
         }
 
-        // ───────────────────────── Controles del reproductor ─────────────────────────
 
-        private void btnPausa_Click(object? sender, EventArgs e)
+        private void btnPause_Click(object? sender, EventArgs e)
         {
-            if (_reproductor.TieneAudio) _reproductor.AlternarPausa();
-            else AvanzarCola(mostrarAvisoSiVacia: true); // nada cargado: arranca la siguiente de la cola
+            if (_reproductor.TieneAudio) _reproductor.TogglePause();
+            else AdvanceEnqueue(mostrarAvisoSiVacia: true); 
         }
 
-        private void btnDetener_Click(object? sender, EventArgs e)
+        private void btnStop_Click(object? sender, EventArgs e)
         {
-            _reproductor.Detener();
+            _reproductor.Stop();
             _pistaSonando = null;
             lblNowPlaying.Text = "⏹ Detenido";
             lblNowPlaying.ForeColor = Color.DimGray;
         }
 
-        private void tbPosicion_MouseUp(object? sender, MouseEventArgs e)
+        private void tbPosition_MouseUp(object? sender, MouseEventArgs e)
         {
             if (_reproductor.TieneAudio && _reproductor.Duracion.TotalSeconds > 0)
             {
-                double fraccion = (double)tbPosicion.Value / tbPosicion.Maximum;
+                double fraccion = (double)tbPosition.Value / tbPosition.Maximum;
                 _reproductor.Posicion = TimeSpan.FromSeconds(_reproductor.Duracion.TotalSeconds * fraccion);
             }
             _arrastrandoPosicion = false;
         }
 
-        private void timerReproductor_Tick(object? sender, EventArgs e)
+        private void timerPlayer_Tick(object? sender, EventArgs e)
         {
             if (!_reproductor.TieneAudio)
             {
-                if (!_arrastrandoPosicion) tbPosicion.Value = 0;
-                lblTiempo.Text = "00:00 / 00:00";
+                if (!_arrastrandoPosicion) tbPosition.Value = 0;
+                lblTime.Text = "00:00 / 00:00";
                 return;
             }
 
@@ -345,70 +339,68 @@ namespace SoundCore_Engine_v1._0
             var pos = _reproductor.Posicion;
 
             if (!_arrastrandoPosicion && dur.TotalSeconds > 0)
-                tbPosicion.Value = (int)Math.Clamp(pos.TotalSeconds / dur.TotalSeconds * tbPosicion.Maximum, 0, tbPosicion.Maximum);
+                tbPosition.Value = (int)Math.Clamp(pos.TotalSeconds / dur.TotalSeconds * tbPosition.Maximum, 0, tbPosition.Maximum);
 
-            lblTiempo.Text = $"{Formato(pos)} / {Formato(dur)}";
+            lblTime.Text = $"{Formato(pos)} / {Formato(dur)}";
         }
 
         private static string Formato(TimeSpan t) => $"{(int)t.TotalMinutes:D2}:{t.Seconds:D2}";
 
-        // ───────────────────────── Vista ─────────────────────────
 
-        private void ConfigurarColumnasGrid()
+        private void ConfigureColumnsGrid()
         {
-            dgvCola.ColumnCount = 6;
-            dgvCola.Columns[0].Name = "Pos";
-            dgvCola.Columns[1].Name = "ID";
-            dgvCola.Columns[2].Name = "Título / Artista";
-            dgvCola.Columns[3].Name = "BPM";
-            dgvCola.Columns[4].Name = "Duración";
-            dgvCola.Columns[5].Name = "Archivo";
-            dgvCola.Columns[0].FillWeight = 8;
-            dgvCola.Columns[1].FillWeight = 8;
-            dgvCola.Columns[2].FillWeight = 45;
-            dgvCola.Columns[3].FillWeight = 12;
-            dgvCola.Columns[4].FillWeight = 12;
-            dgvCola.Columns[5].FillWeight = 30;
+            dgvTail.ColumnCount = 6;
+            dgvTail.Columns[0].Name = "Pos";
+            dgvTail.Columns[1].Name = "ID";
+            dgvTail.Columns[2].Name = "Título / Artista";
+            dgvTail.Columns[3].Name = "BPM";
+            dgvTail.Columns[4].Name = "Duración";
+            dgvTail.Columns[5].Name = "Archivo";
+            dgvTail.Columns[0].FillWeight = 8;
+            dgvTail.Columns[1].FillWeight = 8;
+            dgvTail.Columns[2].FillWeight = 45;
+            dgvTail.Columns[3].FillWeight = 12;
+            dgvTail.Columns[4].FillWeight = 12;
+            dgvTail.Columns[5].FillWeight = 30;
         }
 
-        private void RefrescarVista()
+        private void RefreshView()
         {
-            dgvCola.Rows.Clear();
+            dgvTail.Rows.Clear();
 
             int index = 1;
             int duracionTotal = 0;
 
             foreach (var p in Coleccion)
             {
-                dgvCola.Rows.Add(index++, p.Id, $"{p.Titulo} — {p.Artista}", $"{p.Bpm} BPM",
+                dgvTail.Rows.Add(index++, p.Id, $"{p.Titulo} — {p.Artista}", $"{p.Bpm} BPM",
                     Formato(TimeSpan.FromSeconds(p.DuracionSegundos)), Path.GetFileName(p.RutaArchivo));
                 duracionTotal += p.DuracionSegundos;
             }
 
             string estructura = _modo switch
             {
-                Modo.Propia => "Lista Simple Propia",
+                Modo.Own => "Lista Simple Propia",
                 Modo.LinkedList => "LinkedList<T>",
                 _ => "List<T>"
             };
-            lblEstadisticas.Text = $"Total en cola: {index - 1} pistas | Duración acumulada: {Formato(TimeSpan.FromSeconds(duracionTotal))} | Estructura: {estructura}";
+            lblStadistics.Text = $"Total en cola: {index - 1} pistas | Duración acumulada: {Formato(TimeSpan.FromSeconds(duracionTotal))} | Estructura: {estructura}";
         }
 
-        // ───────────────────────── Benchmark (fuera del hilo de UI) ─────────────────────────
 
         private async void btnBenchmark_Click(object? sender, EventArgs e)
         {
             int n = (int)numBenchMark.Value;
             btnBenchmark.Enabled = false;
-            txtResultadosBenchmark.Text = $"Ejecutando {n:N0} inserciones intermedias en cada estructura...";
+            txtResultsBenchmark.Text = $"Ejecutando {n:N0} inserciones intermedias en cada estructura...";
 
             try
             {
-                txtResultadosBenchmark.Text = await Task.Run(() => EjecutarBenchmark(n));
+                txtResultsBenchmark.Text = await Task.Run(() => RunBenchmark(n));
             }
             catch (Exception ex)
             {
-                txtResultadosBenchmark.Text = "Error en el benchmark: " + ex.Message;
+                txtResultsBenchmark.Text = "Error en el benchmark: " + ex.Message;
             }
             finally
             {
@@ -416,35 +408,31 @@ namespace SoundCore_Engine_v1._0
             }
         }
 
-        private static string EjecutarBenchmark(int n)
+        private static string RunBenchmark(int n)
         {
-            // Las pistas se crean antes de medir para no contaminar el tiempo con asignaciones
             var random = new Random(42);
-            var pistas = new Pista[n];
+            var pistas = new Track[n];
             for (int i = 0; i < n; i++)
-                pistas[i] = new Pista(i, $"Pista {i}", "DJ", random.Next(100, 150), 180, "");
-            var cabeza = new Pista(-1, "Head", "DJ", 120, 200, "");
+                pistas[i] = new Track(i, $"Pista {i}", "DJ", random.Next(100, 150), 180, "");
+            var cabeza = new Track(-1, "Head", "DJ", 120, 200, "");
 
             var sw = new Stopwatch();
 
-            // 1. Lista propia: ReproducirSiguiente = O(1) por reconexión
-            var propia = new ListaSimpleEnlazada<Pista>();
-            propia.AgregarAlFinal(cabeza);
+            var propia = new SimpleLinkedList<Track>();
+            propia.AddToFinal(cabeza);
             sw.Restart();
-            foreach (var p in pistas) propia.ReproducirSiguiente(p);
+            foreach (var p in pistas) propia.PlayNext(p);
             sw.Stop();
             double msPropia = sw.Elapsed.TotalMilliseconds;
 
-            // 2. LinkedList<T>: AddAfter con LinkedListNode = O(1)
-            var linked = new LinkedList<Pista>();
+            var linked = new LinkedList<Track>();
             var nodoCabeza = linked.AddFirst(cabeza);
             sw.Restart();
             foreach (var p in pistas) linked.AddAfter(nodoCabeza, p);
             sw.Stop();
             double msLinked = sw.Elapsed.TotalMilliseconds;
 
-            // 3. List<T>: Insert(1, x) = O(n) por Array.Copy
-            var lista = new List<Pista> { cabeza };
+            var lista = new List<Track> { cabeza };
             sw.Restart();
             foreach (var p in pistas) lista.Insert(1, p);
             sw.Stop();
@@ -460,21 +448,17 @@ namespace SoundCore_Engine_v1._0
                 "al crecer, redimensionar su búfer interno.";
         }
 
-        private void tbVolumen_Scroll(object sender, EventArgs e)
+        private void tbVolume_Scroll(object sender, EventArgs e)
         {
 
-            // 1. Tomamos el valor de la barra (ej. 50) y lo dividimos entre 100 para obtener un decimal (0.5)
-            float volumenCalculado = tbVolumen.Value / 100f;
+            float volumenCalculado = tbVolume.Value / 100f;
 
-            // 2. Le pasamos ese decimal al reproductor 
-            // (Nota: Si usas WaveOutEvent de NAudio directo, la propiedad es en inglés: Volume)
             _reproductor.Volumen = volumenCalculado;
         }
 
-        private void tbPosicion_MouseDown(object sender, MouseEventArgs e)
+        private void tbPosition_MouseDown(object sender, MouseEventArgs e)
         {
             
-            // Le indicamos al programa que el usuario está tocando la barra
             _arrastrandoPosicion = true;
         }
     
