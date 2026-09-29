@@ -33,6 +33,8 @@
             label6 = new Label();
             rbPropia = new RadioButton();
             panel1 = new Panel();
+            label3 = new Label();
+            numBpm = new NumericUpDown();
             rbList = new RadioButton();
             rbLinkedList = new RadioButton();
             btnPausa = new Button();
@@ -62,6 +64,7 @@
             label10 = new Label();
             timerReproductor = new System.Windows.Forms.Timer(components);
             panel1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numBpm).BeginInit();
             panel2.SuspendLayout();
             panel3.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)tbVolumen).BeginInit();
@@ -102,6 +105,8 @@
             // 
             // panel1
             // 
+            panel1.Controls.Add(label3);
+            panel1.Controls.Add(numBpm);
             panel1.Controls.Add(rbList);
             panel1.Controls.Add(rbLinkedList);
             panel1.Controls.Add(label5);
@@ -111,6 +116,22 @@
             panel1.Name = "panel1";
             panel1.Size = new Size(927, 48);
             panel1.TabIndex = 10;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(540, 23);
+            label3.Name = "label3";
+            label3.Size = new Size(35, 15);
+            label3.TabIndex = 13;
+            label3.Text = "BPM:";
+            // 
+            // numBpm
+            // 
+            numBpm.Location = new Point(581, 17);
+            numBpm.Name = "numBpm";
+            numBpm.Size = new Size(54, 23);
+            numBpm.TabIndex = 12;
             // 
             // rbList
             // 
@@ -160,9 +181,9 @@
             // 
             // btnPurgar
             // 
-            btnPurgar.Location = new Point(9, 164);
+            btnPurgar.Location = new Point(9, 246);
             btnPurgar.Name = "btnPurgar";
-            btnPurgar.Size = new Size(195, 23);
+            btnPurgar.Size = new Size(195, 36);
             btnPurgar.TabIndex = 18;
             btnPurgar.Text = "Purgar duplicados";
             btnPurgar.UseVisualStyleBackColor = true;
@@ -170,9 +191,9 @@
             // 
             // btnOrdenarBpm
             // 
-            btnOrdenarBpm.Location = new Point(9, 133);
+            btnOrdenarBpm.Location = new Point(9, 204);
             btnOrdenarBpm.Name = "btnOrdenarBpm";
-            btnOrdenarBpm.Size = new Size(195, 23);
+            btnOrdenarBpm.Size = new Size(195, 36);
             btnOrdenarBpm.TabIndex = 17;
             btnOrdenarBpm.Text = "Ordenar por curva Bpm";
             btnOrdenarBpm.UseVisualStyleBackColor = true;
@@ -180,9 +201,9 @@
             // 
             // btnInvertir
             // 
-            btnInvertir.Location = new Point(9, 104);
+            btnInvertir.Location = new Point(9, 162);
             btnInvertir.Name = "btnInvertir";
-            btnInvertir.Size = new Size(195, 23);
+            btnInvertir.Size = new Size(195, 36);
             btnInvertir.TabIndex = 16;
             btnInvertir.Text = "Invertir lista (in place)";
             btnInvertir.UseVisualStyleBackColor = true;
@@ -190,9 +211,9 @@
             // 
             // btnAvanzar
             // 
-            btnAvanzar.Location = new Point(9, 75);
+            btnAvanzar.Location = new Point(9, 120);
             btnAvanzar.Name = "btnAvanzar";
-            btnAvanzar.Size = new Size(195, 23);
+            btnAvanzar.Size = new Size(195, 36);
             btnAvanzar.TabIndex = 15;
             btnAvanzar.Text = "Avanzar pista";
             btnAvanzar.UseVisualStyleBackColor = true;
@@ -200,9 +221,9 @@
             // 
             // btnReproducirSiguiente
             // 
-            btnReproducirSiguiente.Location = new Point(9, 46);
+            btnReproducirSiguiente.Location = new Point(9, 74);
             btnReproducirSiguiente.Name = "btnReproducirSiguiente";
-            btnReproducirSiguiente.Size = new Size(195, 23);
+            btnReproducirSiguiente.Size = new Size(195, 36);
             btnReproducirSiguiente.TabIndex = 14;
             btnReproducirSiguiente.Text = "Reproducir siguiente";
             btnReproducirSiguiente.UseVisualStyleBackColor = true;
@@ -210,9 +231,9 @@
             // 
             // btnEncolarFinal
             // 
-            btnEncolarFinal.Location = new Point(9, 17);
+            btnEncolarFinal.Location = new Point(9, 25);
             btnEncolarFinal.Name = "btnEncolarFinal";
-            btnEncolarFinal.Size = new Size(195, 23);
+            btnEncolarFinal.Size = new Size(195, 36);
             btnEncolarFinal.TabIndex = 13;
             btnEncolarFinal.Text = "Encolar al final";
             btnEncolarFinal.UseVisualStyleBackColor = true;
@@ -241,7 +262,7 @@
             panel3.Controls.Add(label8);
             panel3.Location = new Point(213, 54);
             panel3.Name = "panel3";
-            panel3.Size = new Size(704, 306);
+            panel3.Size = new Size(686, 306);
             panel3.TabIndex = 12;
             // 
             // label2
@@ -264,6 +285,7 @@
             tbVolumen.TabIndex = 24;
             tbVolumen.TickStyle = TickStyle.None;
             tbVolumen.Value = 80;
+            tbVolumen.Scroll += tbVolumen_Scroll;
             // 
             // lblTiempo
             // 
@@ -294,13 +316,13 @@
             tbPosicion.Size = new Size(641, 32);
             tbPosicion.TabIndex = 19;
             tbPosicion.TickStyle = TickStyle.None;
-            tbPosicion.MouseDown += tbPosicion_MouseUp;
+            tbPosicion.MouseDown += tbPosicion_MouseDown;
             tbPosicion.MouseUp += tbPosicion_MouseUp;
             // 
             // lblEstadisticas
             // 
             lblEstadisticas.AutoSize = true;
-            lblEstadisticas.Location = new Point(9, 282);
+            lblEstadisticas.Location = new Point(16, 282);
             lblEstadisticas.Name = "lblEstadisticas";
             lblEstadisticas.Size = new Size(77, 15);
             lblEstadisticas.TabIndex = 18;
@@ -312,7 +334,7 @@
             dgvCola.AllowUserToDeleteRows = false;
             dgvCola.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvCola.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvCola.Location = new Point(0, 120);
+            dgvCola.Location = new Point(16, 120);
             dgvCola.Name = "dgvCola";
             dgvCola.ReadOnly = true;
             dgvCola.RowHeadersVisible = false;
@@ -347,7 +369,7 @@
             panel4.Controls.Add(label10);
             panel4.Location = new Point(0, 366);
             panel4.Name = "panel4";
-            panel4.Size = new Size(927, 143);
+            panel4.Size = new Size(899, 203);
             panel4.TabIndex = 13;
             // 
             // label1
@@ -362,9 +384,11 @@
             // numBenchMark
             // 
             numBenchMark.Location = new Point(152, 19);
+            numBenchMark.Maximum = new decimal(new int[] { 3000, 0, 0, 0 });
             numBenchMark.Name = "numBenchMark";
             numBenchMark.Size = new Size(58, 23);
             numBenchMark.TabIndex = 25;
+            numBenchMark.Value = new decimal(new int[] { 2500, 0, 0, 0 });
             // 
             // btnBenchmark
             // 
@@ -374,6 +398,7 @@
             btnBenchmark.TabIndex = 22;
             btnBenchmark.Text = "🚀 Iniciar Prueba de Rendimiento";
             btnBenchmark.UseVisualStyleBackColor = true;
+            btnBenchmark.Click += btnBenchmark_Click;
             // 
             // txtResultadosBenchmark
             // 
@@ -381,7 +406,7 @@
             txtResultadosBenchmark.Multiline = true;
             txtResultadosBenchmark.Name = "txtResultadosBenchmark";
             txtResultadosBenchmark.ReadOnly = true;
-            txtResultadosBenchmark.Size = new Size(887, 106);
+            txtResultadosBenchmark.Size = new Size(867, 149);
             txtResultadosBenchmark.TabIndex = 20;
             // 
             // label10
@@ -395,6 +420,7 @@
             // 
             // timerReproductor
             // 
+            timerReproductor.Enabled = true;
             timerReproductor.Interval = 250;
             timerReproductor.Tick += timerReproductor_Tick;
             // 
@@ -402,7 +428,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(929, 510);
+            ClientSize = new Size(898, 571);
             Controls.Add(panel4);
             Controls.Add(panel3);
             Controls.Add(panel2);
@@ -411,6 +437,7 @@
             Text = "SoundCore Engine v1.0 - DJ Set Controller [TecNM Monclova]";
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numBpm).EndInit();
             panel2.ResumeLayout(false);
             panel2.PerformLayout();
             panel3.ResumeLayout(false);
@@ -457,5 +484,7 @@
         private Label label1;
         private NumericUpDown numBenchMark;
         private Label label2;
+        private Label label3;
+        private NumericUpDown numBpm;
     }
 }

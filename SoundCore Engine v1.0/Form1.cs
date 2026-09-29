@@ -161,9 +161,13 @@ namespace SoundCore_Engine_v1._0
             using (var archivo = TagLib.File.Create(ruta))
             {
                 bpm = archivo.Tag.BeatsPerMinute;
+                if (bpm == 0)
+                {
+                    bpm = (uint)numBpm.Value;
+                }
             }
 
-                int sep = nombre.IndexOf(" - ", StringComparison.Ordinal);
+            int sep = nombre.IndexOf(" - ", StringComparison.Ordinal);
             if (sep > 0)
             {
                 artista = nombre[..sep].Trim();
@@ -455,5 +459,24 @@ namespace SoundCore_Engine_v1._0
                 "mientras que List<T> debe desplazar en memoria todos los elementos posteriores al índice y, " +
                 "al crecer, redimensionar su búfer interno.";
         }
+
+        private void tbVolumen_Scroll(object sender, EventArgs e)
+        {
+
+            // 1. Tomamos el valor de la barra (ej. 50) y lo dividimos entre 100 para obtener un decimal (0.5)
+            float volumenCalculado = tbVolumen.Value / 100f;
+
+            // 2. Le pasamos ese decimal al reproductor 
+            // (Nota: Si usas WaveOutEvent de NAudio directo, la propiedad es en inglés: Volume)
+            _reproductor.Volumen = volumenCalculado;
+        }
+
+        private void tbPosicion_MouseDown(object sender, MouseEventArgs e)
+        {
+            
+            // Le indicamos al programa que el usuario está tocando la barra
+            _arrastrandoPosicion = true;
+        }
+    
     }
 }
