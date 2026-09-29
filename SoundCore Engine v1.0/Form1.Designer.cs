@@ -28,20 +28,14 @@
         /// </summary>
         private void InitializeComponent()
         {
-            label1 = new Label();
-            label2 = new Label();
-            label3 = new Label();
-            label4 = new Label();
+            components = new System.ComponentModel.Container();
             label5 = new Label();
             label6 = new Label();
             rbPropia = new RadioButton();
             panel1 = new Panel();
-            numDuracion = new NumericUpDown();
-            numBpm = new NumericUpDown();
-            txtArtista = new TextBox();
-            txtTitulo = new TextBox();
             rbList = new RadioButton();
             rbLinkedList = new RadioButton();
+            btnPausa = new Button();
             panel2 = new Panel();
             btnPurgar = new Button();
             btnOrdenarBpm = new Button();
@@ -51,60 +45,31 @@
             btnEncolarFinal = new Button();
             label7 = new Label();
             panel3 = new Panel();
+            label2 = new Label();
+            tbVolumen = new TrackBar();
+            lblTiempo = new Label();
+            btnDetener = new Button();
+            tbPosicion = new TrackBar();
             lblEstadisticas = new Label();
             dgvCola = new DataGridView();
             lblNowPlaying = new Label();
-            label9 = new Label();
             label8 = new Label();
             panel4 = new Panel();
+            label1 = new Label();
+            numBenchMark = new NumericUpDown();
             btnBenchmark = new Button();
-            label11 = new Label();
             txtResultadosBenchmark = new TextBox();
             label10 = new Label();
+            timerReproductor = new System.Windows.Forms.Timer(components);
             panel1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)numDuracion).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numBpm).BeginInit();
             panel2.SuspendLayout();
             panel3.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)tbVolumen).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)tbPosicion).BeginInit();
             ((System.ComponentModel.ISupportInitialize)dgvCola).BeginInit();
             panel4.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)numBenchMark).BeginInit();
             SuspendLayout();
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new Point(3, 24);
-            label1.Name = "label1";
-            label1.Size = new Size(44, 15);
-            label1.TabIndex = 0;
-            label1.Text = "Titulo :";
-            // 
-            // label2
-            // 
-            label2.AutoSize = true;
-            label2.Location = new Point(259, 24);
-            label2.Name = "label2";
-            label2.Size = new Size(47, 15);
-            label2.TabIndex = 1;
-            label2.Text = "Artista :";
-            // 
-            // label3
-            // 
-            label3.AutoSize = true;
-            label3.Location = new Point(532, 24);
-            label3.Name = "label3";
-            label3.Size = new Size(38, 15);
-            label3.TabIndex = 2;
-            label3.Text = "BPM :";
-            // 
-            // label4
-            // 
-            label4.AutoSize = true;
-            label4.Location = new Point(637, 24);
-            label4.Name = "label4";
-            label4.Size = new Size(80, 15);
-            label4.TabIndex = 3;
-            label4.Text = "Duracion( s ) :";
             // 
             // label5
             // 
@@ -118,7 +83,7 @@
             // label6
             // 
             label6.AutoSize = true;
-            label6.Location = new Point(3, 50);
+            label6.Location = new Point(5, 25);
             label6.Name = "label6";
             label6.Size = new Size(117, 15);
             label6.TabIndex = 5;
@@ -127,7 +92,7 @@
             // rbPropia
             // 
             rbPropia.AutoSize = true;
-            rbPropia.Location = new Point(126, 48);
+            rbPropia.Location = new Point(128, 23);
             rbPropia.Name = "rbPropia";
             rbPropia.Size = new Size(171, 19);
             rbPropia.TabIndex = 9;
@@ -137,56 +102,20 @@
             // 
             // panel1
             // 
-            panel1.Controls.Add(numDuracion);
-            panel1.Controls.Add(numBpm);
-            panel1.Controls.Add(txtArtista);
-            panel1.Controls.Add(txtTitulo);
             panel1.Controls.Add(rbList);
             panel1.Controls.Add(rbLinkedList);
             panel1.Controls.Add(label5);
             panel1.Controls.Add(rbPropia);
-            panel1.Controls.Add(label1);
-            panel1.Controls.Add(label4);
-            panel1.Controls.Add(label2);
             panel1.Controls.Add(label6);
-            panel1.Controls.Add(label3);
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
-            panel1.Size = new Size(801, 71);
+            panel1.Size = new Size(927, 48);
             panel1.TabIndex = 10;
-            // 
-            // numDuracion
-            // 
-            numDuracion.Location = new Point(723, 22);
-            numDuracion.Name = "numDuracion";
-            numDuracion.Size = new Size(55, 23);
-            numDuracion.TabIndex = 15;
-            // 
-            // numBpm
-            // 
-            numBpm.Location = new Point(576, 21);
-            numBpm.Name = "numBpm";
-            numBpm.Size = new Size(55, 23);
-            numBpm.TabIndex = 14;
-            // 
-            // txtArtista
-            // 
-            txtArtista.Location = new Point(312, 20);
-            txtArtista.Name = "txtArtista";
-            txtArtista.Size = new Size(200, 23);
-            txtArtista.TabIndex = 13;
-            // 
-            // txtTitulo
-            // 
-            txtTitulo.Location = new Point(53, 21);
-            txtTitulo.Name = "txtTitulo";
-            txtTitulo.Size = new Size(200, 23);
-            txtTitulo.TabIndex = 12;
             // 
             // rbList
             // 
             rbList.AutoSize = true;
-            rbList.Location = new Point(438, 48);
+            rbList.Location = new Point(440, 23);
             rbList.Name = "rbList";
             rbList.Size = new Size(94, 19);
             rbList.TabIndex = 11;
@@ -197,13 +126,23 @@
             // rbLinkedList
             // 
             rbLinkedList.AutoSize = true;
-            rbLinkedList.Location = new Point(303, 48);
+            rbLinkedList.Location = new Point(305, 23);
             rbLinkedList.Name = "rbLinkedList";
             rbLinkedList.Size = new Size(129, 19);
             rbLinkedList.TabIndex = 10;
             rbLinkedList.TabStop = true;
             rbLinkedList.Text = ".NET LinkedList<T>";
             rbLinkedList.UseVisualStyleBackColor = true;
+            // 
+            // btnPausa
+            // 
+            btnPausa.Location = new Point(16, 91);
+            btnPausa.Name = "btnPausa";
+            btnPausa.Size = new Size(88, 23);
+            btnPausa.TabIndex = 12;
+            btnPausa.Text = "Play / Pausa";
+            btnPausa.UseVisualStyleBackColor = true;
+            btnPausa.Click += btnPausa_Click;
             // 
             // panel2
             // 
@@ -214,9 +153,9 @@
             panel2.Controls.Add(btnReproducirSiguiente);
             panel2.Controls.Add(btnEncolarFinal);
             panel2.Controls.Add(label7);
-            panel2.Location = new Point(0, 73);
+            panel2.Location = new Point(0, 54);
             panel2.Name = "panel2";
-            panel2.Size = new Size(207, 198);
+            panel2.Size = new Size(207, 306);
             panel2.TabIndex = 11;
             // 
             // btnPurgar
@@ -277,7 +216,7 @@
             btnEncolarFinal.TabIndex = 13;
             btnEncolarFinal.Text = "Encolar al final";
             btnEncolarFinal.UseVisualStyleBackColor = true;
-            btnEncolarFinal.Click += btnEncolarFinal_Click;
+            btnEncolarFinal.Click += btnAgregarMusica_Click;
             // 
             // label7
             // 
@@ -290,20 +229,78 @@
             // 
             // panel3
             // 
+            panel3.Controls.Add(label2);
+            panel3.Controls.Add(tbVolumen);
+            panel3.Controls.Add(lblTiempo);
+            panel3.Controls.Add(btnDetener);
+            panel3.Controls.Add(btnPausa);
+            panel3.Controls.Add(tbPosicion);
             panel3.Controls.Add(lblEstadisticas);
             panel3.Controls.Add(dgvCola);
             panel3.Controls.Add(lblNowPlaying);
-            panel3.Controls.Add(label9);
             panel3.Controls.Add(label8);
-            panel3.Location = new Point(213, 73);
+            panel3.Location = new Point(213, 54);
             panel3.Name = "panel3";
-            panel3.Size = new Size(588, 198);
+            panel3.Size = new Size(704, 306);
             panel3.TabIndex = 12;
+            // 
+            // label2
+            // 
+            label2.Location = new Point(305, 95);
+            label2.Name = "label2";
+            label2.Size = new Size(21, 19);
+            label2.TabIndex = 25;
+            label2.Text = "🔊";
+            label2.TextAlign = ContentAlignment.MiddleCenter;
+            // 
+            // tbVolumen
+            // 
+            tbVolumen.AutoSize = false;
+            tbVolumen.Location = new Point(332, 91);
+            tbVolumen.Margin = new Padding(3, 8, 3, 0);
+            tbVolumen.Maximum = 100;
+            tbVolumen.Name = "tbVolumen";
+            tbVolumen.Size = new Size(159, 23);
+            tbVolumen.TabIndex = 24;
+            tbVolumen.TickStyle = TickStyle.None;
+            tbVolumen.Value = 80;
+            // 
+            // lblTiempo
+            // 
+            lblTiempo.AutoSize = true;
+            lblTiempo.Location = new Point(204, 95);
+            lblTiempo.Name = "lblTiempo";
+            lblTiempo.Size = new Size(72, 15);
+            lblTiempo.TabIndex = 23;
+            lblTiempo.Text = "00:00 / 00:00";
+            // 
+            // btnDetener
+            // 
+            btnDetener.Location = new Point(110, 91);
+            btnDetener.Name = "btnDetener";
+            btnDetener.Size = new Size(88, 23);
+            btnDetener.TabIndex = 20;
+            btnDetener.Text = "Detener";
+            btnDetener.UseVisualStyleBackColor = true;
+            btnDetener.Click += btnDetener_Click;
+            // 
+            // tbPosicion
+            // 
+            tbPosicion.AutoSize = false;
+            tbPosicion.LargeChange = 50;
+            tbPosicion.Location = new Point(9, 53);
+            tbPosicion.Maximum = 1000;
+            tbPosicion.Name = "tbPosicion";
+            tbPosicion.Size = new Size(641, 32);
+            tbPosicion.TabIndex = 19;
+            tbPosicion.TickStyle = TickStyle.None;
+            tbPosicion.MouseDown += tbPosicion_MouseUp;
+            tbPosicion.MouseUp += tbPosicion_MouseUp;
             // 
             // lblEstadisticas
             // 
             lblEstadisticas.AutoSize = true;
-            lblEstadisticas.Location = new Point(3, 168);
+            lblEstadisticas.Location = new Point(9, 282);
             lblEstadisticas.Name = "lblEstadisticas";
             lblEstadisticas.Size = new Size(77, 15);
             lblEstadisticas.TabIndex = 18;
@@ -311,29 +308,26 @@
             // 
             // dgvCola
             // 
+            dgvCola.AllowUserToAddRows = false;
+            dgvCola.AllowUserToDeleteRows = false;
+            dgvCola.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             dgvCola.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvCola.Location = new Point(0, 39);
+            dgvCola.Location = new Point(0, 120);
             dgvCola.Name = "dgvCola";
-            dgvCola.Size = new Size(588, 117);
+            dgvCola.ReadOnly = true;
+            dgvCola.RowHeadersVisible = false;
+            dgvCola.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvCola.Size = new Size(650, 159);
             dgvCola.TabIndex = 17;
             // 
             // lblNowPlaying
             // 
             lblNowPlaying.AutoSize = true;
-            lblNowPlaying.Location = new Point(90, 21);
+            lblNowPlaying.Location = new Point(16, 25);
             lblNowPlaying.Name = "lblNowPlaying";
-            lblNowPlaying.Size = new Size(353, 15);
+            lblNowPlaying.Size = new Size(305, 15);
             lblNowPlaying.TabIndex = 15;
-            lblNowPlaying.Text = "Estado Actual: ▶ Reproduciendo: \"Strobe - deadmau5 (128 BPM)\"";
-            // 
-            // label9
-            // 
-            label9.AutoSize = true;
-            label9.Location = new Point(3, 21);
-            label9.Name = "label9";
-            label9.Size = new Size(83, 15);
-            label9.TabIndex = 14;
-            label9.Text = "Estado actual :";
+            lblNowPlaying.Text = "Sin reproducción — agrega música y pulsa Avanzar Pista";
             // 
             // label8
             // 
@@ -346,33 +340,40 @@
             // 
             // panel4
             // 
+            panel4.Controls.Add(label1);
+            panel4.Controls.Add(numBenchMark);
             panel4.Controls.Add(btnBenchmark);
-            panel4.Controls.Add(label11);
             panel4.Controls.Add(txtResultadosBenchmark);
             panel4.Controls.Add(label10);
-            panel4.Location = new Point(0, 277);
+            panel4.Location = new Point(0, 366);
             panel4.Name = "panel4";
-            panel4.Size = new Size(801, 161);
+            panel4.Size = new Size(927, 143);
             panel4.TabIndex = 13;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(9, 23);
+            label1.Name = "label1";
+            label1.Size = new Size(137, 15);
+            label1.TabIndex = 26;
+            label1.Text = "Pistas para test de estrés:";
+            // 
+            // numBenchMark
+            // 
+            numBenchMark.Location = new Point(152, 19);
+            numBenchMark.Name = "numBenchMark";
+            numBenchMark.Size = new Size(58, 23);
+            numBenchMark.TabIndex = 25;
             // 
             // btnBenchmark
             // 
-            btnBenchmark.Location = new Point(275, 19);
+            btnBenchmark.Location = new Point(213, 19);
             btnBenchmark.Name = "btnBenchmark";
             btnBenchmark.Size = new Size(195, 23);
             btnBenchmark.TabIndex = 22;
             btnBenchmark.Text = "🚀 Iniciar Prueba de Rendimiento";
             btnBenchmark.UseVisualStyleBackColor = true;
-            btnBenchmark.Click += btnBenchmark_Click;
-            // 
-            // label11
-            // 
-            label11.AutoSize = true;
-            label11.Location = new Point(9, 23);
-            label11.Name = "label11";
-            label11.Size = new Size(260, 15);
-            label11.TabIndex = 21;
-            label11.Text = " Cantidad de pistas para test de estrés: [ 25,000 ] ";
             // 
             // txtResultadosBenchmark
             // 
@@ -380,7 +381,7 @@
             txtResultadosBenchmark.Multiline = true;
             txtResultadosBenchmark.Name = "txtResultadosBenchmark";
             txtResultadosBenchmark.ReadOnly = true;
-            txtResultadosBenchmark.Size = new Size(766, 106);
+            txtResultadosBenchmark.Size = new Size(887, 106);
             txtResultadosBenchmark.TabIndex = 20;
             // 
             // label10
@@ -392,11 +393,16 @@
             label10.TabIndex = 19;
             label10.Text = "[ PANEL DE BENCHMARK Y TELEMETRÍA ]";
             // 
+            // timerReproductor
+            // 
+            timerReproductor.Interval = 250;
+            timerReproductor.Tick += timerReproductor_Tick;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(929, 510);
             Controls.Add(panel4);
             Controls.Add(panel3);
             Controls.Add(panel2);
@@ -405,24 +411,20 @@
             Text = "SoundCore Engine v1.0 - DJ Set Controller [TecNM Monclova]";
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)numDuracion).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numBpm).EndInit();
             panel2.ResumeLayout(false);
             panel2.PerformLayout();
             panel3.ResumeLayout(false);
             panel3.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)tbVolumen).EndInit();
+            ((System.ComponentModel.ISupportInitialize)tbPosicion).EndInit();
             ((System.ComponentModel.ISupportInitialize)dgvCola).EndInit();
             panel4.ResumeLayout(false);
             panel4.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)numBenchMark).EndInit();
             ResumeLayout(false);
         }
 
         #endregion
-
-        private Label label1;
-        private Label label2;
-        private Label label3;
-        private Label label4;
         private Label label5;
         private Label label6;
         private RadioButton rbPropia;
@@ -435,11 +437,6 @@
         private Label label8;
         private DataGridView dgvCola;
         private Label lblNowPlaying;
-        private Label label9;
-        private NumericUpDown numBpm;
-        private TextBox txtArtista;
-        private NumericUpDown numDuracion;
-        private TextBox txtTitulo;
         private Button btnReproducirSiguiente;
         private Button btnEncolarFinal;
         private Button btnOrdenarBpm;
@@ -450,7 +447,15 @@
         private Panel panel4;
         private Label label10;
         private TextBox txtResultadosBenchmark;
-        private Label label11;
         private Button btnBenchmark;
+        private Button btnPausa;
+        private Button btnDetener;
+        private TrackBar tbPosicion;
+        private TrackBar tbVolumen;
+        private Label lblTiempo;
+        private System.Windows.Forms.Timer timerReproductor;
+        private Label label1;
+        private NumericUpDown numBenchMark;
+        private Label label2;
     }
 }

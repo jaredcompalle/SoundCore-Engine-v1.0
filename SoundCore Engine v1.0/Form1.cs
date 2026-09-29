@@ -1,252 +1,459 @@
 using SoundCore.EstructurasPropias;
-using SoundCore.Modelos;
 using System.Diagnostics;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using NAudio.Wave;
 
 namespace SoundCore_Engine_v1._0
 {
     public partial class Form1 : Form
     {
-        // Estructuras paralelas
+        private enum Modo { Propia, LinkedList, List }
+
+        // Estructuras paralelas (solo la activa contiene la cola en cada momento)
         private readonly ListaSimpleEnlazada<Pista> _colaPropia = new();
         private readonly LinkedList<Pista> _colaLinkedList = new();
         private readonly List<Pista> _colaList = new();
 
+        private readonly ReproductorAudio _reproductor = new();
+        private Modo _modo = Modo.Propia;
         private int _contadorId = 1;
-        private Pista? _pistaSonando = null;
+        private Pista? _pistaSonando;
+        private bool _arrastrandoPosicion;
+
+        private const string FiltroAudio =
+            "Audio (*.mp3;*.wav;*.flac;*.aiff;*.aif;*.m4a;*.aac;*.wma)|*.mp3;*.wav;*.flac;*.aiff;*.aif;*.m4a;*.aac;*.wma|Todos los archivos (*.*)|*.*";
 
         public Form1()
         {
             InitializeComponent();
             ConfigurarColumnasGrid();
-            CargarDatosSemilla();
+            _reproductor.PistaTerminada += (_, _) => AvanzarCola(mostrarAvisoSiVacia: false); // auto-avance
             RefrescarVista();
         }
 
+        protected override void OnFormClosed(FormClosedEventArgs e)
+        {
+            timerReproductor.Stop();
+            _reproductor.Dispose();
+            base.OnFormClosed(e);
+        }
+
+        // ───────────────────────── Estructura activa ─────────────────────────
+
+        private IEnumerable<Pista> Coleccion => _modo switch
+        {
+            Modo.Propia => _colaPropia,
+            Modo.LinkedList => _colaLinkedList,
+            _ => _colaList
+        };
+
+        private void rbEstructura_CheckedChanged(object? sender, EventArgs e)
+        {
+            if (sender is not RadioButton { Checked: true }) return;
+
+            var nuevo = rbPropia.Checked ? Modo.Propia : rbLinkedList.Checked ? Modo.LinkedList : Modo.List;
+            if (nuevo == _modo) return;
+
+            // Migrar la cola actual a la nueva estructura para que el cambio sea reactivo y coherente
+            var snapshot = Coleccion.ToList();
+            _colaPropia.Limpiar();
+            _colaLinkedList.Clear();
+            _colaList.Clear();
+            _modo = nuevo;
+
+            foreach (var p in snapshot) EncolarFinal(p);
+            RefrescarVista();
+        }
+
+        private void EncolarFinal(Pista p)
+        {
+            switch (_modo)
+            {
+                case Modo.Propia: _colaPropia.AgregarAlFinal(p); break;
+                case Modo.LinkedList: _colaLinkedList.AddLast(p); break;
+                default: _colaList.Add(p); break;
+            }
+        }
+
+        private void EncolarUpNext(Pista p)
+        {
+            switch (_modo)
+            {
+                case Modo.Propia:
+                    _colaPropia.ReproducirSiguiente(p);
+                    break;
+                case Modo.LinkedList:
+                    if (_colaLinkedList.First == null) _colaLinkedList.AddFirst(p);
+                    else _colaLinkedList.AddAfter(_colaLinkedList.First, p);
+                    break;
+                default:
+                    if (_colaList.Count <= 1) _colaList.Add(p);
+                    else _colaList.Insert(1, p);
+                    break;
+            }
+        }
+
+        private Pista? Desencolar()
+        {
+            switch (_modo)
+            {
+                case Modo.Propia:
+                    return _colaPropia.EstaVacia ? null : _colaPropia.AvanzarPista();
+                case Modo.LinkedList:
+                    {
+                        var primero = _colaLinkedList.First;
+                        if (primero == null) return null;
+                        _colaLinkedList.RemoveFirst();
+                        return primero.Value;
+                    }
+                default:
+                    {
+                        if (_colaList.Count == 0) return null;
+                        var p = _colaList[0];
+                        _colaList.RemoveAt(0);
+                        return p;
+                    }
+            }
+        }
+
+        // ───────────────────────── Explorador de archivos + NAudio ─────────────────────────
+
+        /// <summary>Abre el explorador de archivos y crea una Pista por cada audio elegido.</summary>
+        private List<Pista> PedirPistas(string titulo)
+        {
+            using var dlg = new OpenFileDialog
+            {
+                Title = titulo,
+                Filter = FiltroAudio,
+                Multiselect = true,
+                CheckFileExists = true
+            };
+            if (dlg.ShowDialog(this) != DialogResult.OK) return [];
+
+            var pistas = new List<Pista>();
+            var fallidos = new List<string>();
+
+            foreach (var ruta in dlg.FileNames)
+            {
+                try { pistas.Add(CrearPista(ruta)); }
+                catch (Exception) { fallidos.Add(Path.GetFileName(ruta)); }
+            }
+
+            if (fallidos.Count > 0)
+                MessageBox.Show("No se pudieron leer estos archivos de audio:\n\n" + string.Join("\n", fallidos),
+                    "Archivos omitidos", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
+            return pistas;
+        }
+
+        private Pista CrearPista(string ruta)
+        {
+            // NAudio abre el archivo para obtener la duración real
+            using var lector = new AudioFileReader(ruta);
+            int duracion = (int)Math.Round(lector.TotalTime.TotalSeconds);
+
+            // NAudio no lee etiquetas ID3: se deduce "Artista - Título" del nombre del archivo
+            string nombre = Path.GetFileNameWithoutExtension(ruta);
+            string artista = "Artista desconocido";
+            string titulo = nombre;
+
+            uint bpm = 0;
+            using (var archivo = TagLib.File.Create(ruta))
+            {
+                bpm = archivo.Tag.BeatsPerMinute;
+            }
+
+                int sep = nombre.IndexOf(" - ", StringComparison.Ordinal);
+            if (sep > 0)
+            {
+                artista = nombre[..sep].Trim();
+                titulo = nombre[(sep + 3)..].Trim();
+            }
+
+            return new Pista(_contadorId++, titulo, artista, (int)bpm, duracion, ruta);
+        }
+
+        private void ReproducirPista(Pista p)
+        {
+            try
+            {
+                _reproductor.Reproducir(p.RutaArchivo);
+                _pistaSonando = p;
+                lblNowPlaying.Text = $"▶ Sonando: {p.Titulo} - {p.Artista} ({p.Bpm} BPM)";
+                lblNowPlaying.ForeColor = Color.DarkGreen;
+            }
+            catch (Exception ex)
+            {
+                _pistaSonando = null;
+                lblNowPlaying.Text = "⚠ No se pudo reproducir la pista";
+                lblNowPlaying.ForeColor = Color.Firebrick;
+                MessageBox.Show($"No se pudo reproducir \"{p.Titulo}\":\n{ex.Message}", "Error de audio",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        // ───────────────────────── Acciones de cola ─────────────────────────
+
+        private void btnAgregarMusica_Click(object? sender, EventArgs e)
+        {
+            foreach (var p in PedirPistas("Selecciona la música que quieres encolar al final"))
+                EncolarFinal(p);
+            RefrescarVista();
+        }
+
+        private void btnReproducirSiguiente_Click(object? sender, EventArgs e)
+        {
+            var pistas = PedirPistas("Selecciona la música para Up Next");
+
+            // Se insertan en orden inverso para que queden en el orden en que se eligieron
+            for (int i = pistas.Count - 1; i >= 0; i--)
+                EncolarUpNext(pistas[i]);
+
+            RefrescarVista();
+        }
+
+        private void btnAvanzar_Click(object? sender, EventArgs e) => AvanzarCola(mostrarAvisoSiVacia: true);
+
+        private void AvanzarCola(bool mostrarAvisoSiVacia)
+        {
+            var siguiente = Desencolar();
+
+            if (siguiente == null)
+            {
+                if (mostrarAvisoSiVacia)
+                {
+                    MessageBox.Show("No hay pistas pendientes en la cola.", "Fin del Setlist",
+                        MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    _reproductor.Detener();
+                    _pistaSonando = null;
+                    lblNowPlaying.Text = "⏹ Fin del setlist";
+                    lblNowPlaying.ForeColor = Color.DimGray;
+                }
+            }
+            else
+            {
+                ReproducirPista(siguiente);
+            }
+
+            RefrescarVista();
+        }
+
+        private void btnInvertir_Click(object? sender, EventArgs e)
+        {
+            switch (_modo)
+            {
+                case Modo.Propia:
+                    _colaPropia.Invertir();
+                    break;
+                case Modo.LinkedList:
+                    var invertida = _colaLinkedList.Reverse().ToList();
+                    _colaLinkedList.Clear();
+                    foreach (var p in invertida) _colaLinkedList.AddLast(p);
+                    break;
+                default:
+                    _colaList.Reverse();
+                    break;
+            }
+            RefrescarVista();
+        }
+
+        private void btnOrdenarBpm_Click(object? sender, EventArgs e)
+        {
+            switch (_modo)
+            {
+                case Modo.Propia:
+                    _colaPropia.Ordenar((a, b) => a.Bpm.CompareTo(b.Bpm));
+                    break;
+                case Modo.LinkedList:
+                    var ordenadasLl = _colaLinkedList.OrderBy(p => p.Bpm).ToList();
+                    _colaLinkedList.Clear();
+                    foreach (var p in ordenadasLl) _colaLinkedList.AddLast(p);
+                    break;
+                default:
+                    var ordenadasL = _colaList.OrderBy(p => p.Bpm).ToList();
+                    _colaList.Clear();
+                    _colaList.AddRange(ordenadasL);
+                    break;
+            }
+            RefrescarVista();
+        }
+
+        private void btnPurgar_Click(object? sender, EventArgs e)
+        {
+            switch (_modo)
+            {
+                case Modo.Propia:
+                    _colaPropia.DepurarDuplicados((a, b) => a.Titulo.Equals(b.Titulo, StringComparison.OrdinalIgnoreCase));
+                    break;
+                case Modo.LinkedList:
+                    var unicosLl = _colaLinkedList.DistinctBy(p => p.Titulo, StringComparer.OrdinalIgnoreCase).ToList();
+                    _colaLinkedList.Clear();
+                    foreach (var p in unicosLl) _colaLinkedList.AddLast(p);
+                    break;
+                default:
+                    var unicosL = _colaList.DistinctBy(p => p.Titulo, StringComparer.OrdinalIgnoreCase).ToList();
+                    _colaList.Clear();
+                    _colaList.AddRange(unicosL);
+                    break;
+            }
+            RefrescarVista();
+        }
+
+        // ───────────────────────── Controles del reproductor ─────────────────────────
+
+        private void btnPausa_Click(object? sender, EventArgs e)
+        {
+            if (_reproductor.TieneAudio) _reproductor.AlternarPausa();
+            else AvanzarCola(mostrarAvisoSiVacia: true); // nada cargado: arranca la siguiente de la cola
+        }
+
+        private void btnDetener_Click(object? sender, EventArgs e)
+        {
+            _reproductor.Detener();
+            _pistaSonando = null;
+            lblNowPlaying.Text = "⏹ Detenido";
+            lblNowPlaying.ForeColor = Color.DimGray;
+        }
+
+        private void tbPosicion_MouseUp(object? sender, MouseEventArgs e)
+        {
+            if (_reproductor.TieneAudio && _reproductor.Duracion.TotalSeconds > 0)
+            {
+                double fraccion = (double)tbPosicion.Value / tbPosicion.Maximum;
+                _reproductor.Posicion = TimeSpan.FromSeconds(_reproductor.Duracion.TotalSeconds * fraccion);
+            }
+            _arrastrandoPosicion = false;
+        }
+
+        private void timerReproductor_Tick(object? sender, EventArgs e)
+        {
+            if (!_reproductor.TieneAudio)
+            {
+                if (!_arrastrandoPosicion) tbPosicion.Value = 0;
+                lblTiempo.Text = "00:00 / 00:00";
+                return;
+            }
+
+            var dur = _reproductor.Duracion;
+            var pos = _reproductor.Posicion;
+
+            if (!_arrastrandoPosicion && dur.TotalSeconds > 0)
+                tbPosicion.Value = (int)Math.Clamp(pos.TotalSeconds / dur.TotalSeconds * tbPosicion.Maximum, 0, tbPosicion.Maximum);
+
+            lblTiempo.Text = $"{Formato(pos)} / {Formato(dur)}";
+        }
+
+        private static string Formato(TimeSpan t) => $"{(int)t.TotalMinutes:D2}:{t.Seconds:D2}";
+
+        // ───────────────────────── Vista ─────────────────────────
+
         private void ConfigurarColumnasGrid()
         {
-            dgvCola.ColumnCount = 5;
+            dgvCola.ColumnCount = 6;
             dgvCola.Columns[0].Name = "Pos";
             dgvCola.Columns[1].Name = "ID";
             dgvCola.Columns[2].Name = "Título / Artista";
             dgvCola.Columns[3].Name = "BPM";
             dgvCola.Columns[4].Name = "Duración";
-            dgvCola.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-        }
-
-        private void CargarDatosSemilla()
-        {
-            var demo = new[]
-            {
-                new Pista(_contadorId++, "Strobe", "deadmau5", 128, 634),
-                new Pista(_contadorId++, "Midnight City", "M83", 105, 243),
-                new Pista(_contadorId++, "Animals", "Martin Garrix", 130, 304)
-            };
-
-            foreach (var p in demo)
-            {
-                _colaPropia.AgregarAlFinal(p);
-                _colaLinkedList.AddLast(p);
-                _colaList.Add(p);
-            }
-        }
-
-        private Pista CrearPistaDesdeFormulario()
-        {
-            string titulo = string.IsNullOrWhiteSpace(txtTitulo.Text) ? $"Pista {_contadorId}" : txtTitulo.Text.Trim();
-            string artista = string.IsNullOrWhiteSpace(txtArtista.Text) ? "DJ Desconocido" : txtArtista.Text.Trim();
-            int bpm = (int)numBpm.Value;
-            int duracion = (int)numDuracion.Value;
-
-            return new Pista(_contadorId++, titulo, artista, bpm, duracion);
-        }
-
-        private void btnEncolarFinal_Click(object sender, EventArgs e)
-        {
-            var pista = CrearPistaDesdeFormulario();
-
-            if (rbPropia.Checked) _colaPropia.AgregarAlFinal(pista);
-            else if (rbLinkedList.Checked) _colaLinkedList.AddLast(pista);
-            else _colaList.Add(pista);
-
-            RefrescarVista();
-        }
-
-        private void btnReproducirSiguiente_Click(object sender, EventArgs e)
-        {
-            var pista = CrearPistaDesdeFormulario();
-
-            if (rbPropia.Checked)
-            {
-                _colaPropia.ReproducirSiguiente(pista);
-            }
-            else if (rbLinkedList.Checked)
-            {
-                if (_colaLinkedList.First == null)
-                    _colaLinkedList.AddFirst(pista);
-                else
-                    _colaLinkedList.AddAfter(_colaLinkedList.First, pista);
-            }
-            else
-            {
-                if (_colaList.Count <= 1) _colaList.Add(pista);
-                else _colaList.Insert(1, pista);
-            }
-
-            RefrescarVista();
-        }
-
-        private void btnAvanzar_Click(object sender, EventArgs e)
-        {
-            try
-            {
-                if (rbPropia.Checked)
-                {
-                    _pistaSonando = _colaPropia.AvanzarPista();
-                }
-                else if (rbLinkedList.Checked)
-                {
-                    if (_colaLinkedList.First == null) throw new InvalidOperationException();
-                    _pistaSonando = _colaLinkedList.First.Value;
-                    _colaLinkedList.RemoveFirst();
-                }
-                else
-                {
-                    if (_colaList.Count == 0) throw new InvalidOperationException();
-                    _pistaSonando = _colaList[0];
-                    _colaList.RemoveAt(0);
-                }
-
-                lblNowPlaying.Text = $"▶ Sonando: {_pistaSonando.Titulo} - {_pistaSonando.Artista} ({_pistaSonando.Bpm} BPM)";
-                lblNowPlaying.ForeColor = Color.DarkGreen;
-                RefrescarVista();
-            }
-            catch (InvalidOperationException)
-            {
-                MessageBox.Show("No hay pistas pendientes en la cola.", "Fin del Setlist", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-        }
-
-        private void btnInvertir_Click(object sender, EventArgs e)
-        {
-            if (rbPropia.Checked)
-            {
-                _colaPropia.Invertir();
-            }
-            else if (rbLinkedList.Checked)
-            {
-                var listaTemporal = new List<Pista>(_colaLinkedList);
-                listaTemporal.Reverse();
-                _colaLinkedList.Clear();
-                foreach (var item in listaTemporal) _colaLinkedList.AddLast(item);
-            }
-            else
-            {
-                _colaList.Reverse();
-            }
-
-            RefrescarVista();
-        }
-
-        private void btnOrdenarBpm_Click(object sender, EventArgs e)
-        {
-            if (rbPropia.Checked)
-            {
-                var temporal = new ListaSimpleEnlazada<Pista>();
-                foreach (var pista in _colaPropia)
-                {
-                    temporal.InsertarOrdenado(pista, (a, b) => a.Bpm.CompareTo(b.Bpm));
-                }
-                _colaPropia.Limpiar();
-                foreach (var p in temporal) _colaPropia.AgregarAlFinal(p);
-            }
-            else if (rbLinkedList.Checked)
-            {
-                var ordenadas = _colaLinkedList.OrderBy(p => p.Bpm).ToList();
-                _colaLinkedList.Clear();
-                foreach (var p in ordenadas) _colaLinkedList.AddLast(p);
-            }
-            else
-            {
-                _colaList.Sort((a, b) => a.Bpm.CompareTo(b.Bpm));
-            }
-
-            RefrescarVista();
-        }
-
-        private void btnPurgar_Click(object sender, EventArgs e)
-        {
-            if (rbPropia.Checked)
-            {
-                _colaPropia.DepurarDuplicados((a, b) => a.Titulo.Equals(b.Titulo, StringComparison.OrdinalIgnoreCase));
-            }
-            else if (rbLinkedList.Checked)
-            {
-                var unicos = _colaLinkedList.DistinctBy(p => p.Titulo).ToList();
-                _colaLinkedList.Clear();
-                foreach (var p in unicos) _colaLinkedList.AddLast(p);
-            }
-            else
-            {
-                var unicos = _colaList.DistinctBy(p => p.Titulo).ToList();
-                _colaList.Clear();
-                _colaList.AddRange(unicos);
-            }
-
-            RefrescarVista();
+            dgvCola.Columns[5].Name = "Archivo";
+            dgvCola.Columns[0].FillWeight = 8;
+            dgvCola.Columns[1].FillWeight = 8;
+            dgvCola.Columns[2].FillWeight = 45;
+            dgvCola.Columns[3].FillWeight = 12;
+            dgvCola.Columns[4].FillWeight = 12;
+            dgvCola.Columns[5].FillWeight = 30;
         }
 
         private void RefrescarVista()
         {
             dgvCola.Rows.Clear();
-            IEnumerable<Pista> coleccion = rbPropia.Checked ? _colaPropia :
-                                           rbLinkedList.Checked ? _colaLinkedList : _colaList;
 
             int index = 1;
             int duracionTotal = 0;
 
-            foreach (var p in coleccion)
+            foreach (var p in Coleccion)
             {
-                dgvCola.Rows.Add(index++, p.Id, $"{p.Titulo} — {p.Artista}", $"{p.Bpm} BPM", $"{p.DuracionSegundos}s");
+                dgvCola.Rows.Add(index++, p.Id, $"{p.Titulo} — {p.Artista}", $"{p.Bpm} BPM",
+                    Formato(TimeSpan.FromSeconds(p.DuracionSegundos)), Path.GetFileName(p.RutaArchivo));
                 duracionTotal += p.DuracionSegundos;
             }
 
-            lblEstadisticas.Text = $"Total en cola: {index - 1} | Tiempo total: {TimeSpan.FromSeconds(duracionTotal):mm\\:ss}";
+            string estructura = _modo switch
+            {
+                Modo.Propia => "Lista Simple Propia",
+                Modo.LinkedList => "LinkedList<T>",
+                _ => "List<T>"
+            };
+            lblEstadisticas.Text = $"Total en cola: {index - 1} pistas | Duración acumulada: {Formato(TimeSpan.FromSeconds(duracionTotal))} | Estructura: {estructura}";
         }
 
-        private void btnBenchmark_Click(object sender, EventArgs e)
+        // ───────────────────────── Benchmark (fuera del hilo de UI) ─────────────────────────
+
+        private async void btnBenchmark_Click(object? sender, EventArgs e)
         {
-            int n = 20_000;
+            int n = (int)numBenchMark.Value;
+            btnBenchmark.Enabled = false;
+            txtResultadosBenchmark.Text = $"Ejecutando {n:N0} inserciones intermedias en cada estructura...";
+
+            try
+            {
+                txtResultadosBenchmark.Text = await Task.Run(() => EjecutarBenchmark(n));
+            }
+            catch (Exception ex)
+            {
+                txtResultadosBenchmark.Text = "Error en el benchmark: " + ex.Message;
+            }
+            finally
+            {
+                btnBenchmark.Enabled = true;
+            }
+        }
+
+        private static string EjecutarBenchmark(int n)
+        {
+            // Las pistas se crean antes de medir para no contaminar el tiempo con asignaciones
             var random = new Random(42);
+            var pistas = new Pista[n];
+            for (int i = 0; i < n; i++)
+                pistas[i] = new Pista(i, $"Pista {i}", "DJ", random.Next(100, 150), 180, "");
+            var cabeza = new Pista(-1, "Head", "DJ", 120, 200, "");
+
             var sw = new Stopwatch();
 
-            // 1. Test Inserción Intermedia: Lista Propia
-            var testPropia = new ListaSimpleEnlazada<Pista>();
-            testPropia.AgregarAlFinal(new Pista(0, "Head", "DJ", 120, 200));
-            sw.Start();
-            for (int i = 0; i < n; i++)
-            {
-                testPropia.ReproducirSiguiente(new Pista(i, $"Pista {i}", "DJ", random.Next(100, 150), 180));
-            }
-            sw.Stop();
-            long tiempoPropia = sw.ElapsedMilliseconds;
-
-            // 2. Test Inserción Intermedia: List<T> (Array Copy)
-            var testList = new List<Pista> { new Pista(0, "Head", "DJ", 120, 200) };
+            // 1. Lista propia: ReproducirSiguiente = O(1) por reconexión
+            var propia = new ListaSimpleEnlazada<Pista>();
+            propia.AgregarAlFinal(cabeza);
             sw.Restart();
-            for (int i = 0; i < n; i++)
-            {
-                testList.Insert(1, new Pista(i, $"Pista {i}", "DJ", random.Next(100, 150), 180));
-            }
+            foreach (var p in pistas) propia.ReproducirSiguiente(p);
             sw.Stop();
-            long tiempoList = sw.ElapsedMilliseconds;
+            double msPropia = sw.Elapsed.TotalMilliseconds;
 
-            txtResultadosBenchmark.Text =
+            // 2. LinkedList<T>: AddAfter con LinkedListNode = O(1)
+            var linked = new LinkedList<Pista>();
+            var nodoCabeza = linked.AddFirst(cabeza);
+            sw.Restart();
+            foreach (var p in pistas) linked.AddAfter(nodoCabeza, p);
+            sw.Stop();
+            double msLinked = sw.Elapsed.TotalMilliseconds;
+
+            // 3. List<T>: Insert(1, x) = O(n) por Array.Copy
+            var lista = new List<Pista> { cabeza };
+            sw.Restart();
+            foreach (var p in pistas) lista.Insert(1, p);
+            sw.Stop();
+            double msLista = sw.Elapsed.TotalMilliseconds;
+
+            return
                 $"=== RESULTADOS DE ESTRÉS ({n:N0} INSERCIONES INTERMEDIAS) ===\r\n" +
-                $"• Lista Enlazada Propia (Nodos):   {tiempoPropia} ms  [Operación O(1) por reconexión]\r\n" +
-                $"• .NET List<T> (Arreglo Dinámico):  {tiempoList} ms  [Operación O(n) por desplazamiento de memoria]\r\n\r\n" +
-                $"Conclusión Técnica: En inserciones intermedias frecuentes, la Lista Enlazada supera a List<T> " +
-                $"porque no ejecuta Array.Copy ni redimensionamiento de búfer.";
+                $"• Lista Enlazada Propia (Nodos):  {msPropia,9:F1} ms  [Inserción intermedia O(1) por reconexión]\r\n" +
+                $"• .NET LinkedList<T>:             {msLinked,9:F1} ms  [Inserción con LinkedListNode O(1)]\r\n" +
+                $"• .NET List<T> (Arreglo Dinámico):{msLista,9:F1} ms  [Insert(idx) O(n): desplaza elementos con Array.Copy]\r\n\r\n" +
+                "Conclusión Técnica: en inserciones intermedias frecuentes, las listas enlazadas solo redirigen referencias, " +
+                "mientras que List<T> debe desplazar en memoria todos los elementos posteriores al índice y, " +
+                "al crecer, redimensionar su búfer interno.";
         }
     }
 }
