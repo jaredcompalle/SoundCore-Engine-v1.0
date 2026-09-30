@@ -33,6 +33,7 @@
             label6 = new Label();
             rbOwn = new RadioButton();
             panel1 = new Panel();
+            btnGenerateFile = new Button();
             label3 = new Label();
             numBpm = new NumericUpDown();
             rbList = new RadioButton();
@@ -114,8 +115,18 @@
             panel1.Controls.Add(label6);
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
-            panel1.Size = new Size(927, 48);
+            panel1.Size = new Size(899, 48);
             panel1.TabIndex = 10;
+            // 
+            // btnGenerateFile
+            // 
+            btnGenerateFile.Location = new Point(414, 19);
+            btnGenerateFile.Name = "btnGenerateFile";
+            btnGenerateFile.Size = new Size(75, 23);
+            btnGenerateFile.TabIndex = 14;
+            btnGenerateFile.Text = "Archivo";
+            btnGenerateFile.UseVisualStyleBackColor = true;
+            btnGenerateFile.Click += btnGenerateFile_Click;
             // 
             // label3
             // 
@@ -363,6 +374,7 @@
             // 
             // panel4
             // 
+            panel4.Controls.Add(btnGenerateFile);
             panel4.Controls.Add(label1);
             panel4.Controls.Add(numBenchMark);
             panel4.Controls.Add(btnBenchmark);
@@ -487,5 +499,6 @@
         private Label label2;
         private Label label3;
         private NumericUpDown numBpm;
+        private Button btnGenerateFile;
     }
 }

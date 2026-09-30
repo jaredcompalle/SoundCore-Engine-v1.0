@@ -2,10 +2,12 @@
 // Authors: Rosembert Jared Ortiz Reyes - I25050406
 // Date: 28/09/2026 | Version: 1.0
 
+using NAudio.Wave;
+using NAudio.Wave.SampleProviders;
 using SoundCore.EstructurasPropias;
 using System.Diagnostics;
+using System.Security.Cryptography;
 using static System.Runtime.InteropServices.JavaScript.JSType;
-using NAudio.Wave;
 
 namespace SoundCore_Engine_v1._0
 {
@@ -152,22 +154,7 @@ namespace SoundCore_Engine_v1._0
             string artist = "Unknown Artist";
             string title = name;
 
-            uint bpm = 0;
-            using (var file = TagLib.File.Create(path))
-            {
-                bpm = file.Tag.BeatsPerMinute;
-                if (bpm == 0)
-                {
-                    bpm = (uint)numBpm.Value;
-                }
-            }
-
-            int separator = name.IndexOf(" - ", StringComparison.Ordinal);
-            if (separator > 0)
-            {
-                artist = name[..separator].Trim();
-                title = name[(separator + 3)..].Trim();
-            }
+            int bpm = (int)Math.Round(BpmDetector.Detect(path));
 
             return new Track(_idCounter++, title, artist, (int)bpm, duration, path);
         }
@@ -384,61 +371,155 @@ namespace SoundCore_Engine_v1._0
 
         private async void btnBenchmark_Click(object? sender, EventArgs e)
         {
-            int n = (int)numBenchMark.Value;
-            btnBenchmark.Enabled = false;
-            txtResultsBenchmark.Text = $"Executing {n:N0} intermediate insertions in each structure...";
+            using (var openFileDialog = new OpenFileDialog())
+            {
+                openFileDialog.Filter = "Text Files (*.txt)|*.txt|CSV Files (*.csv)|*.csv|All Files (*.*)|*.*";
+                openFileDialog.Title = "Select Dataset File for Benchmark";
 
-            try
-            {
-                txtResultsBenchmark.Text = await Task.Run(() => RunBenchmark(n));
-            }
-            catch (Exception ex)
-            {
-                txtResultsBenchmark.Text = "Benchmark error: " + ex.Message;
-            }
-            finally
-            {
-                btnBenchmark.Enabled = true;
+                if (openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    btnBenchmark.Enabled = false;
+                    string filePath = openFileDialog.FileName;
+
+                    try
+                    {
+                        txtResultsBenchmark.Text = "Loading dataset from file...";
+                        Track[] tracks = await Task.Run(() => LoadTracksFromFile(filePath));
+
+                        if (tracks.Length == 0)
+                        {
+                            txtResultsBenchmark.Text = "Benchmark error: Selected file is empty.";
+                            return;
+                        }
+
+                        txtResultsBenchmark.Text = $"Executing {tracks.Length:N0} intermediate insertions in each structure...";
+                        txtResultsBenchmark.Text = await Task.Run(() => RunBenchmark(tracks));
+                    }
+                    catch (Exception ex)
+                    {
+                        txtResultsBenchmark.Text = "Benchmark error: " + ex.Message;
+                    }
+                    finally
+                    {
+                        btnBenchmark.Enabled = true;
+                    }
+                }
             }
         }
 
-        private static string RunBenchmark(int n)
+        private static string RunBenchmark(Track[] tracks)
         {
-            var random = new Random(42);
-            var tracks = new Track[n];
-            for (int i = 0; i < n; i++)
-                tracks[i] = new Track(i, $"Track {i}", "DJ", random.Next(100, 150), 180, "");
-            var head = new Track(-1, "Head", "DJ", 120, 200, "");
+            int count = tracks.Length;
+            var headTrack = new Track(-1, "Head", "DJ", 120, 200, "");
 
-            var sw = new Stopwatch();
+            var stopwatch = new Stopwatch();
 
+            // 1. Custom Linked List Test
             var ownList = new SimpleLinkedList<Track>();
-            ownList.AddToEnd(head);
-            sw.Restart();
+            ownList.AddToEnd(headTrack);
+            stopwatch.Restart();
             foreach (var track in tracks) ownList.PlayNext(track);
-            sw.Stop();
-            double msOwn = sw.Elapsed.TotalMilliseconds;
+            stopwatch.Stop();
+            double msOwn = stopwatch.Elapsed.TotalMilliseconds;
 
-            var linked = new LinkedList<Track>();
-            var headNode = linked.AddFirst(head);
-            sw.Restart();
-            foreach (var track in tracks) linked.AddAfter(headNode, track);
-            sw.Stop();
-            double msLinked = sw.Elapsed.TotalMilliseconds;
+            // 2. .NET LinkedList<T> Test
+            var linkedList = new LinkedList<Track>();
+            var headNode = linkedList.AddFirst(headTrack);
+            stopwatch.Restart();
+            foreach (var track in tracks) linkedList.AddAfter(headNode, track);
+            stopwatch.Stop();
+            double msLinked = stopwatch.Elapsed.TotalMilliseconds;
 
-            var list = new List<Track> { head };
-            sw.Restart();
-            foreach (var track in tracks) list.Insert(1, track);
-            sw.Stop();
-            double msList = sw.Elapsed.TotalMilliseconds;
+            // 3. .NET List<T> Test
+            var dynamicArray = new List<Track> { headTrack };
+            stopwatch.Restart();
+            foreach (var track in tracks) dynamicArray.Insert(1, track);
+            stopwatch.Stop();
+            double msList = stopwatch.Elapsed.TotalMilliseconds;
 
             return
-                $"=== RESULTADOS DE LA PRUEBA DE ESTRÉS ({n:N0} INSERCIONES INTERMEDIAS) ===\r\n" +
-                $"• Lista Enlazada Propia (Nodos):  {msOwn,9:F1} ms  [Inserción intermedia O(1) por reconexión]\r\n" +
-                $"• .NET LinkedList<T>:            {msLinked,9:F1} ms  [Inserción O(1) con LinkedListNode]\r\n" +
-                $"• .NET List<T> (Arreglo Dinámico):  {msList,9:F1} ms  [Insert(idx) O(n): desplaza elementos con Array.Copy]\r\n\r\n" +
-                "Conclusión Técnica: En inserciones intermedias frecuentes, las listas enlazadas solo actualizan referencias, " +
-                "mientras que List<T> debe desplazar todos los elementos posteriores en memoria y redimensionar su búfer interno a medida que crece.";
+                $"=== STRESS TEST RESULTS ({count:N0} INTERMEDIATE INSERTIONS) ===\r\n" +
+                $"• Custom Linked List (Nodes):      {msOwn,9:F1} ms  [O(1) intermediate insertion via reference updates]\r\n" +
+                $"• .NET LinkedList<T>:              {msLinked,9:F1} ms  [O(1) insertion using LinkedListNode]\r\n" +
+                $"• .NET List<T> (Dynamic Array):     {msList,9:F1} ms  [Insert(idx) O(n): shifts elements using Array.Copy]\r\n\r\n" +
+                "Technical Conclusion: For frequent intermediate insertions, linked lists only update memory references, " +
+                "whereas List<T> must shift all subsequent elements in memory and resize its internal buffer as it grows.";
+        }
+
+        private async void btnGenerateFile_Click(object? sender, EventArgs e)
+        {
+            using (var saveFileDialog = new SaveFileDialog())
+            {
+                saveFileDialog.Filter = "Text Files (*.txt)|*.txt|CSV Files (*.csv)|*.csv|All Files (*.*)|*.*";
+                saveFileDialog.FileName = "tracks.txt";
+                saveFileDialog.Title = "Save Dataset File";
+
+                if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    btnGenerateFile.Enabled = false;
+                    txtResultsBenchmark.Text = "Generating 25,000 tracks in file...";
+
+                    try
+                    {
+                        string filePath = saveFileDialog.FileName;
+                        await Task.Run(() => GenerateTracksFile(filePath, (int)numBenchMark.Value));
+                        txtResultsBenchmark.Text = $"File successfully created at:\r\n{filePath}";
+                    }
+                    catch (Exception ex)
+                    {
+                        txtResultsBenchmark.Text = "File generation error: " + ex.Message;
+                    }
+                    finally
+                    {
+                        btnGenerateFile.Enabled = true;
+                    }
+                }
+            }
+        }
+
+        public static void GenerateTracksFile(string filePath, int totalTracks = 25000)
+        {
+            string[] genres = { "Electronic", "Rock", "Pop", "HipHop", "House", "Techno", "Ambient" };
+            string[] artists = { "DJ Nova", "Beatmaker", "EchoPulse", "Syntax", "LunarShift", "Aura", "Vortex" };
+
+            var random = new Random();
+
+            using (var writer = new StreamWriter(filePath, false, System.Text.Encoding.UTF8))
+            {
+                for (int i = 1; i <= totalTracks; i++)
+                {
+                    string artist = artists[random.Next(artists.Length)];
+                    string genre = genres[random.Next(genres.Length)];
+                    string title = $"{genre} Track #{i}";
+                    int bpm = random.Next(80, 180);
+                    int duration = random.Next(120, 360);
+                    string path = $"C:\\Music\\{genre}\\track_{i}.mp3";
+
+                    writer.WriteLine($"{i}|{title}|{artist}|{bpm}|{duration}|{path}");
+                }
+            }
+        }
+
+        public static Track[] LoadTracksFromFile(string filePath)
+        {
+            string[] lines = File.ReadAllLines(filePath);
+            var tracks = new Track[lines.Length];
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string[] parts = lines[i].Split('|'); // Change separator if using commas or tabs
+
+                int id = int.Parse(parts[0]);
+                string title = parts[1];
+                string artist = parts[2];
+                int bpm = int.Parse(parts[3]);
+                int duration = int.Parse(parts[4]);
+                string path = parts[5];
+
+                tracks[i] = new Track(id, title, artist, bpm, duration, path);
+            }
+
+            return tracks;
         }
 
         private void tbVolume_Scroll(object sender, EventArgs e)
@@ -451,5 +532,97 @@ namespace SoundCore_Engine_v1._0
         {
             _isDraggingPosition = true;
         }
+
+        public static class BpmDetector
+        {
+            private const int HopSize = 512;        // muestras por ventana de energía
+            private const double MinBpm = 70;
+            private const double MaxBpm = 180;
+
+            public static double Detect(string path)
+            {
+                // 1) Leer audio (mp3, wav, aac, etc.) como float y calcular la energía por ventana
+                var envelope = new List<double>();
+                int sampleRate;
+
+                using (var reader = new AudioFileReader(path))
+                {
+                    sampleRate = reader.WaveFormat.SampleRate;
+                    int channels = reader.WaveFormat.Channels;
+                    var byteBuffer = new byte[HopSize * channels * sizeof(float)];
+                    var buffer = new float[HopSize * channels];
+                    int bytesRead;
+
+                    while ((bytesRead = reader.Read(byteBuffer, 0, byteBuffer.Length)) > 0)
+                    {
+                        // Convertir bytes a floats
+                        for (int i = 0; i < bytesRead / sizeof(float); i++)
+                            buffer[i] = BitConverter.ToSingle(byteBuffer, i * sizeof(float));
+
+                        double sum = 0;
+                        int frames = bytesRead / (channels * sizeof(float));
+                        for (int f = 0; f < frames; f++)
+                        {
+                            // mezclar a mono
+                            double mono = 0;
+                            for (int c = 0; c < channels; c++)
+                                mono += buffer[f * channels + c];
+                            mono /= channels;
+                            sum += mono * mono;
+                        }
+                        double rms = Math.Sqrt(sum / Math.Max(frames, 1));
+                        envelope.Add(Math.Log(1 + 100 * rms)); // compresión logarítmica
+                    }
+                }
+
+                if (envelope.Count < 100)
+                    throw new InvalidOperationException("El audio es demasiado corto.");
+
+                // 2) Función de onsets: aumentos positivos de energía
+                var onset = new double[envelope.Count];
+                for (int i = 1; i < envelope.Count; i++)
+                    onset[i] = Math.Max(0, envelope[i] - envelope[i - 1]);
+
+                double mean = onset.Average();
+                for (int i = 0; i < onset.Length; i++)
+                    onset[i] -= mean;
+
+                // 3) Autocorrelación en el rango de BPM buscado
+                double fps = (double)sampleRate / HopSize;   // ventanas por segundo
+                double bestBpm = 0, bestScore = double.MinValue;
+
+                for (double bpm = MinBpm; bpm <= MaxBpm; bpm += 0.25)
+                {
+                    double lag = 60.0 * fps / bpm;            // lag fraccionario
+                    double score = Autocorrelation(onset, lag);
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        bestBpm = bpm;
+                    }
+                }
+
+                return bestBpm;
+            }
+
+            // Autocorrelación con interpolación lineal para lags no enteros
+            private static double Autocorrelation(double[] x, double lag)
+            {
+                int l0 = (int)Math.Floor(lag);
+                double frac = lag - l0;
+                double sum = 0;
+                int n = 0;
+
+                for (int i = 0; i + l0 + 1 < x.Length; i++)
+                {
+                    double shifted = x[i + l0] * (1 - frac) + x[i + l0 + 1] * frac;
+                    sum += x[i] * shifted;
+                    n++;
+                }
+                return n > 0 ? sum / n : 0;
+            }
+        }
     }
 }
+
+

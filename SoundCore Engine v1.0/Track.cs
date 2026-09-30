@@ -9,4 +9,5 @@ namespace SoundCore_Engine_v1
         public override string ToString() =>
             $"[ID: {Id:D3}] {Title} - {Artist} | {Bpm} BPM ({DurationSeconds}s)";
     }
+
 }
